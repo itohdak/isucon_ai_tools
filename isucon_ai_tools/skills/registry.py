@@ -44,6 +44,11 @@ class SkillRegistry:
                 description="Apply fix and deploy the updated artifact.",
                 required_tools=["filesystem", "git", "shell"],
             ),
+            "analyze_iteration": SkillSpec(
+                name="analyze_iteration",
+                description="Compare before/after benchmark reports and suggest the next investigation area.",
+                required_tools=["history", "logs", "mysql"],
+            ),
             "rollback": SkillSpec(
                 name="rollback",
                 description="Restore the last known good state when a hypothesis worsens the score.",

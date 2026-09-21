@@ -1,0 +1,419 @@
+{
+  "kind": "baseline",
+  "environment": "isucon14",
+  "generated_at": "2026-09-21T02:40:03.435854+00:00",
+  "app_host": "isucon13-1",
+  "benchmark": {
+    "status": "ok",
+    "data": {
+      "host": "bench",
+      "remote_host": "13.115.244.165",
+      "command": [
+        "sudo",
+        "-u",
+        "isucon",
+        "./bench",
+        "run",
+        "--target",
+        "https://bench.xiv.isucon.net",
+        "--addr",
+        "192.168.0.11:443",
+        "--payment-bind-port",
+        "12346",
+        "--payment-url",
+        "http://192.168.0.12:12346"
+      ],
+      "capture_logs": true,
+      "returncode": 0,
+      "timestamp": "2026-09-21T02:41:12.704688+00:00",
+      "stdout": "time=11:40:04.470 level=DEBUG source=/tmp/isucon14/bench/cmd/run.go:90 msg=target targetURL=https://bench.xiv.isucon.net targetAddr=192.168.0.11:443 benchrun.GetTargetAddress()=\"\" paymentURL=http://192.168.0.12:12346\ntime=11:40:04.470 level=INFO msg=負荷走行を開始します\ntime=11:40:09.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=60\ntime=11:40:09.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=0 score=\"[0 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:11.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=120\ntime=11:40:11.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=0 score=\"[0 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:13.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=180\ntime=11:40:13.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=0 score=\"[0 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:13.084 level=INFO msg=これまでに地域内の評判によって0人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:14.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=240\ntime=11:40:14.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=0 score=\"[0 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:16.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=300\ntime=11:40:16.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=1 score=\"[1 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:18.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=360\ntime=11:40:18.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=2 score=\"[2 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:18.484 level=INFO msg=これまでに地域内の評判によって0人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:18.484 level=INFO msg=100.0%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:40:20.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=420\ntime=11:40:20.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=3 score=\"[3 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:22.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=480\ntime=11:40:22.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=3 score=\"[3 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:23.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=540\ntime=11:40:23.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=3 score=\"[3 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:23.884 level=INFO msg=これまでに地域内の評判によって0人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:23.884 level=INFO msg=100.0%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:40:25.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=600\ntime=11:40:25.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=4 score=\"[4 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:27.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=660\ntime=11:40:27.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=5 score=\"[5 0 0 0 0]\" criteria=\"[0 0 0 0]\"\ntime=11:40:29.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=720\ntime=11:40:29.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=6 score=\"[5 1 0 0 0]\" criteria=\"[1 0 0 0]\"\ntime=11:40:29.284 level=INFO msg=これまでに地域内の評判によって2人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:29.284 level=INFO msg=83.3%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:40:31.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=780\ntime=11:40:31.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=6 score=\"[5 1 0 0 0]\" criteria=\"[1 0 0 0]\"\ntime=11:40:32.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=840\ntime=11:40:32.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=7 score=\"[5 2 0 0 0]\" criteria=\"[2 0 0 0]\"\ntime=11:40:34.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=900\ntime=11:40:34.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=9 score=\"[6 3 0 0 0]\" criteria=\"[3 0 0 0]\"\ntime=11:40:34.684 level=INFO msg=これまでに地域内の評判によって2人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:34.684 level=INFO msg=66.7%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:40:36.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=960\ntime=11:40:36.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=9 score=\"[6 3 0 0 0]\" criteria=\"[3 0 0 0]\"\ntime=11:40:38.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1020\ntime=11:40:38.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=9 score=\"[6 3 0 0 0]\" criteria=\"[3 0 0 0]\"\ntime=11:40:40.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1080\ntime=11:40:40.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=10 score=\"[6 4 0 0 0]\" criteria=\"[4 0 0 0]\"\ntime=11:40:40.084 level=INFO msg=これまでに地域内の評判によって4人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:40.084 level=INFO msg=60.0%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:40:41.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1140\ntime=11:40:41.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=10 score=\"[6 4 0 0 0]\" criteria=\"[4 0 0 0]\"\ntime=11:40:41.960 level=INFO msg=一定の売上が立ったためオーナーの椅子が増加します 名前=\"ReSit & Renew\" 増加数=1\ntime=11:40:43.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1200\ntime=11:40:43.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=11 score=\"[6 5 0 0 0]\" criteria=\"[5 0 0 0]\"\ntime=11:40:45.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1260\ntime=11:40:45.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=12 score=\"[6 6 0 0 0]\" criteria=\"[6 0 0 0]\"\ntime=11:40:45.484 level=INFO msg=これまでに地域内の評判によって4人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:45.484 level=INFO msg=50.0%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:40:47.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1320\ntime=11:40:47.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=12 score=\"[6 6 0 0 0]\" criteria=\"[6 0 0 0]\"\ntime=11:40:49.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1380\ntime=11:40:49.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=13 score=\"[6 7 0 0 0]\" criteria=\"[7 0 0 0]\"\ntime=11:40:50.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1440\ntime=11:40:50.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=13 score=\"[6 7 0 0 0]\" criteria=\"[7 0 0 0]\"\ntime=11:40:50.884 level=INFO msg=これまでに地域内の評判によって7人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:50.884 level=INFO msg=これまでに低評価なライドによって1人が利用をやめました\ntime=11:40:50.884 level=INFO msg=46.2%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:40:52.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1500\ntime=11:40:52.684 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=13 score=\"[6 7 0 0 0]\" criteria=\"[7 0 0 0]\"\ntime=11:40:54.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1560\ntime=11:40:54.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=15 score=\"[8 7 0 0 0]\" criteria=\"[7 0 0 0]\"\ntime=11:40:56.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1620\ntime=11:40:56.284 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=15 score=\"[8 7 0 0 0]\" criteria=\"[7 0 0 0]\"\ntime=11:40:56.284 level=INFO msg=これまでに地域内の評判によって11人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:40:56.284 level=INFO msg=これまでに低評価なライドによって1人が利用をやめました\ntime=11:40:56.284 level=INFO msg=53.3%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:40:56.327 level=INFO msg=一定の売上が立ったためオーナーの椅子が増加します 名前=快旅タクシー 増加数=1\ntime=11:40:58.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1680\ntime=11:40:58.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=15 score=\"[8 7 0 0 0]\" criteria=\"[7 0 0 0]\"\ntime=11:40:59.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1740\ntime=11:40:59.884 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=16 score=\"[8 8 0 0 0]\" criteria=\"[8 0 0 0]\"\ntime=11:41:01.685 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1800\ntime=11:41:01.685 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=16 score=\"[8 8 0 0 0]\" criteria=\"[8 0 0 0]\"\ntime=11:41:01.685 level=INFO msg=これまでに地域内の評判によって17人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:41:01.685 level=INFO msg=これまでに低評価なライドによって2人が利用をやめました\ntime=11:41:01.685 level=INFO msg=50.0%のライドは椅子がマッチされるまでの時間、100.0%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:41:03.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1860\ntime=11:41:03.484 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=19 score=\"[11 8 0 0 0]\" criteria=\"[8 0 0 0]\"\ntime=11:41:03.523 level=INFO msg=一定の売上が立ったためオーナーの椅子が増加します 名前=座り心地再生所 増加数=1\ntime=11:41:03.724 level=INFO msg=一定の売上が立ったためオーナーの椅子が増加します 名前=ゆったり号 増加数=1\ntime=11:41:05.285 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1920\ntime=11:41:05.285 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=20 score=\"[11 9 0 0 0]\" criteria=\"[9 0 0 0]\"\ntime=11:41:07.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:315 msg=時間経過 tick=1980\ntime=11:41:07.084 level=DEBUG source=/tmp/isucon14/bench/benchmarker/scenario/scenario.go:317 msg=eval reqs=22 score=\"[11 10 1 0 0]\" criteria=\"[11 1 0 0]\"\ntime=11:41:07.084 level=INFO msg=これまでに地域内の評判によって22人、既存ユーザーの招待経由で0人が新規登録しました\ntime=11:41:07.084 level=INFO msg=これまでに低評価なライドによって6人が利用をやめました\ntime=11:41:07.084 level=INFO msg=50.0%のライドは椅子がマッチされるまでの時間、95.5%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:41:07.180 level=INFO msg=一定の売上が立ったためオーナーの椅子が増加します 名前=ゆったり号 増加数=1\ntime=11:41:12.684 level=INFO msg=最終地域情報 名前=チェアタウン ユーザー登録数=22 アクティブユーザー数=16\ntime=11:41:12.685 level=INFO msg=最終地域情報 名前=コシカケシティ ユーザー登録数=11 アクティブユーザー数=10\ntime=11:41:12.685 level=INFO msg=最終オーナー情報 名前=座り心地再生所 売上=16200 椅子数=5\ntime=11:41:12.685 level=INFO msg=最終オーナー情報 名前=\"ReSit & Renew\" 売上=19500 椅子数=5\ntime=11:41:12.685 level=INFO msg=最終オーナー情報 名前=快旅タクシー 売上=28800 椅子数=5\ntime=11:41:12.685 level=INFO msg=最終オーナー情報 名前=ChairCycle 売上=14700 椅子数=4\ntime=11:41:12.685 level=INFO msg=最終オーナー情報 名前=ゆったり号 売上=35000 椅子数=6\ntime=11:41:12.685 level=INFO msg=50.0%のライドは椅子がマッチされるまでの時間、95.5%のライドはマッチされた椅子が乗車地点までに掛かる時間、100.0%のライドは椅子の実移動時間に不満がありました\ntime=11:41:12.685 level=INFO msg=結果 pass=true スコア=2192 種別エラー数=map[]\ntime=11:41:12.685 level=INFO msg=負荷走行が終了しました\n",
+      "stderr": "",
+      "pass": true,
+      "score": 2192,
+      "error_counts": "map[]"
+    },
+    "message": "Benchmark completed."
+  },
+  "git": {
+    "status": {
+      "status": "ok",
+      "data": {
+        "repo_path": "/home/isucon",
+        "status": [
+          " M webapp/sql/1-schema.sql"
+        ],
+        "returncode": 0,
+        "stderr": ""
+      },
+      "message": null
+    },
+    "diff": {
+      "status": "ok",
+      "data": {
+        "repo_path": "/home/isucon",
+        "diff": " webapp/sql/1-schema.sql | 3 ++-\n 1 file changed, 2 insertions(+), 1 deletion(-)\ndiff --git a/webapp/sql/1-schema.sql b/webapp/sql/1-schema.sql\nindex bc2c5fc..42dd71a 100644\n--- a/webapp/sql/1-schema.sql\n+++ b/webapp/sql/1-schema.sql\n@@ -93,7 +93,8 @@ CREATE TABLE rides\n   updated_at            DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '状態更新日時',\n   PRIMARY KEY (id),\n   KEY rides_chair_id_updated_at_idx (chair_id, updated_at),\n-  KEY rides_user_id_created_at_idx (user_id, created_at)\n+  KEY rides_user_id_created_at_idx (user_id, created_at),\n+  KEY rides_chair_id_created_at_idx (chair_id, created_at)\n )\n   COMMENT = 'ライド情報テーブル';\n \n",
+        "returncode": 0,
+        "stderr": ""
+      },
+      "message": null
+    }
+  },
+  "resources": {
+    "status": "ok",
+    "data": {
+      "host": "isucon13-1",
+      "window_seconds": 300,
+      "source": "remote shell",
+      "metrics": {
+        "load_average": {
+          "load1": 9.2,
+          "load5": 5.71,
+          "load15": 3.17
+        },
+        "memory": {
+          "total_mb": 3792,
+          "used_mb": 1009,
+          "used_percent": 26.6
+        },
+        "disk": {
+          "filesystem": "/dev/root",
+          "used": "9.2G",
+          "available": "29G",
+          "used_percent": "25%"
+        },
+        "top_processes": [
+          {
+            "pid": 87074,
+            "command": "mysqld",
+            "cpu_percent": 65.3,
+            "memory_percent": 13.6
+          },
+          {
+            "pid": 87153,
+            "command": "isuride",
+            "cpu_percent": 21.1,
+            "memory_percent": 0.4
+          },
+          {
+            "pid": 90239,
+            "command": "systemd",
+            "cpu_percent": 3.5,
+            "memory_percent": 0.2
+          },
+          {
+            "pid": 90521,
+            "command": "sshd",
+            "cpu_percent": 2.7,
+            "memory_percent": 0.2
+          },
+          {
+            "pid": 87145,
+            "command": "nginx",
+            "cpu_percent": 2.2,
+            "memory_percent": 0.2
+          }
+        ]
+      },
+      "raw": "UPTIME\n 02:41:14 up  3:09,  1 user,  load average: 9.20, 5.71, 3.17\nFREE\n               total        used        free      shared  buff/cache   available\nMem:            3792        1009        1262           2        1772        2782\nSwap:              0           0           0\nDF\nFilesystem      Size  Used Avail Use% Mounted on\n/dev/root        38G  9.2G   29G  25% /\nPS\n    PID COMMAND         %CPU %MEM\n  87074 mysqld          65.3 13.6\n  87153 isuride         21.1  0.4\n  90239 systemd          3.5  0.2\n  90521 sshd             2.7  0.2\n  87145 nginx            2.2  0.2\n",
+      "returncode": 0,
+      "stderr": ""
+    },
+    "message": null
+  },
+  "mysql": {
+    "slow_queries": {
+      "status": "ok",
+      "data": {
+        "host": "isucon13-1",
+        "slow_log": "/var/log/mysql/mysql-slow.log",
+        "slow_queries": [
+          {
+            "query": "COMMIT",
+            "count": 46,
+            "total_time_ms": 14.059,
+            "max_time_ms": 2.251,
+            "avg_time_ms": 0.3056304347826087
+          },
+          {
+            "query": "START TRANSACTION",
+            "count": 41,
+            "total_time_ms": 7.898000000000002,
+            "max_time_ms": 1.0510000000000002,
+            "avg_time_ms": 0.19263414634146347
+          },
+          {
+            "query": "SELECT * FROM ride_statuses WHERE ride_id = '01M30XCYX4R00VS9EJGB6HKBD1' ORDER BY created_at",
+            "count": 1,
+            "total_time_ms": 4.53,
+            "max_time_ms": 4.53,
+            "avg_time_ms": 4.53
+          },
+          {
+            "query": "SELECT * FROM ride_statuses WHERE ride_id = '01M30XBNW9DSEC368P8VF0CKCM' ORDER BY created_at",
+            "count": 1,
+            "total_time_ms": 4.2909999999999995,
+            "max_time_ms": 4.2909999999999995,
+            "avg_time_ms": 4.2909999999999995
+          },
+          {
+            "query": "SELECT * FROM ride_statuses WHERE ride_id = '01M30XD32BAG1CVKBGFX8N93FG' ORDER BY created_at",
+            "count": 1,
+            "total_time_ms": 4.29,
+            "max_time_ms": 4.29,
+            "avg_time_ms": 4.29
+          },
+          {
+            "query": "SELECT * FROM chairs INNER JOIN (SELECT id FROM chairs WHERE is_active = TRUE ORDER BY RAND() LIMIT 1) AS tmp ON chairs.id = tmp.id LIMIT 1",
+            "count": 10,
+            "total_time_ms": 3.9509999999999996,
+            "max_time_ms": 0.629,
+            "avg_time_ms": 0.39509999999999995
+          },
+          {
+            "query": "SELECT * FROM ride_statuses WHERE ride_id = '01M30XD0Z0NKRRNHCTD166Z737' ORDER BY created_at",
+            "count": 1,
+            "total_time_ms": 3.8040000000000003,
+            "max_time_ms": 3.8040000000000003,
+            "avg_time_ms": 3.8040000000000003
+          },
+          {
+            "query": "SELECT * FROM ride_statuses WHERE ride_id = '01M30XDAS965S33KJB9MBGKAED' AND app_sent_at IS NULL ORDER BY created_at ASC LIMIT 1",
+            "count": 1,
+            "total_time_ms": 3.5599999999999996,
+            "max_time_ms": 3.5599999999999996,
+            "avg_time_ms": 3.5599999999999996
+          },
+          {
+            "query": "SELECT * FROM ride_statuses WHERE ride_id = '01M30XCJCE2J1CTTZ70KY6GWDY' AND chair_sent_at IS NULL ORDER BY created_at ASC LIMIT 1",
+            "count": 1,
+            "total_time_ms": 3.494,
+            "max_time_ms": 3.494,
+            "avg_time_ms": 3.494
+          },
+          {
+            "query": "SELECT * FROM rides WHERE chair_id = '01M30XBGY74F9Q5A7H5T1K5Q31' ORDER BY updated_at DESC",
+            "count": 1,
+            "total_time_ms": 2.942,
+            "max_time_ms": 2.942,
+            "avg_time_ms": 2.942
+          }
+        ],
+        "returncode": 0,
+        "stderr": ""
+      },
+      "message": null
+    }
+  },
+  "logs": {
+    "routes": {
+      "status": "ok",
+      "data": {
+        "host": "isucon13-1",
+        "access_log": "/var/log/nginx/access.log",
+        "routes": [
+          {
+            "count": 75486,
+            "uri": "/api/chair/notification"
+          },
+          {
+            "count": 25489,
+            "uri": "/api/chair/coordinate"
+          },
+          {
+            "count": 24520,
+            "uri": "/api/app/notification"
+          },
+          {
+            "count": 11799,
+            "uri": "/api/internal/matching"
+          },
+          {
+            "count": 1314,
+            "uri": "/favicon.ico"
+          },
+          {
+            "count": 1313,
+            "uri": "/favicon-32x32.png"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/root-JpS3BGeV.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/root-BoSp76zW.css"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/jsx-runtime-56DGgGmo.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/isuride-CWZY8A89.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/index-9ZhTBp7q.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/get-cookie-value-B3QhECDc.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/entry.client-BwsCJ-uh.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/components-Cbm4tYXz.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/colors-DB9lnfSt.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/bundle-mjs-Dnoi3Axr.js"
+          },
+          {
+            "count": 1313,
+            "uri": "/assets/api-components-dDIZztSJ.js"
+          },
+          {
+            "count": 869,
+            "uri": "/assets/button-CS9qg6Tt.js"
+          },
+          {
+            "count": 689,
+            "uri": "/owner"
+          },
+          {
+            "count": 689,
+            "uri": "/assets/route-DzrPVuAG.js"
+          }
+        ],
+        "returncode": 0,
+        "stderr": ""
+      },
+      "message": null
+    },
+    "recent": {
+      "status": "ok",
+      "data": {
+        "host": "isucon13-1",
+        "patterns": [
+          "ERROR",
+          "WARN",
+          "error",
+          "panic",
+          "slow"
+        ],
+        "lines": [
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:29:27 ip-192-168-0-11 isuride[70940]: 2026/09/21 02:29:27 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:36:17 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:36:17 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:38:02 ip-192-168-0-11 isuride[78580]: 2026/09/21 02:38:02 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\"",
+          "Sep 21 02:41:12 ip-192-168-0-11 isuride[87153]: 2026/09/21 02:41:12 ERROR error response wrote !BADKEY=\"context canceled\""
+        ],
+        "returncode": 0,
+        "stderr": ""
+      },
+      "message": null
+    }
+  }
+}

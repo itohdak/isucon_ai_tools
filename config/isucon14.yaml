@@ -1,0 +1,169 @@
+environment: isucon14
+aws:
+  profile: isucon15.prep
+  region: ap-northeast-1
+  stack_name: isucon14
+ssh:
+  user: ubuntu
+  private_key_path: /home/itohdak/Downloads/isucon.pem
+hosts:
+  app:
+    name: isucon13-1
+    public_ip: 18.180.203.145
+    private_ip: 192.168.0.11
+    app_path: /home/isucon/webapp
+  bench:
+    name: isucon14-bench
+    public_ip: 13.115.244.165
+    private_ip: 192.168.0.12
+    bench_binary: /home/isucon/bench
+benchmark:
+  working_directory: /home/isucon
+  command:
+    - sudo
+    - -u
+    - isucon
+    - ./bench
+    - run
+    - --target
+    - https://bench.xiv.isucon.net
+    - --addr
+    - 192.168.0.11:443
+    - --payment-bind-port
+    - "12346"
+    - --payment-url
+    - http://192.168.0.12:12346
+  target_url: https://bench.xiv.isucon.net
+  target_addr: 192.168.0.11:443
+  payment_bind_port: 12346
+  payment_url: http://192.168.0.12:12346
+  baseline_score:
+    score: 1002
+    pass: true
+    measured_at: "2026-09-21"
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  database: isuride
+  version: 8.0.46-0ubuntu0.24.04.3
+  access_method: sudo mysql on app host
+  mcp_verified: true
+  current_top_slow_query: SELECT * FROM rides WHERE chair_id IS NULL ORDER BY created_at LIMIT 1
+  current_top_slow_query_explain_extra: Using where; Using filesort
+git:
+  startup_checklist: docs/isucon-startup-checklist.md
+  template_repository: https://github.com/itohdak/isucon_template
+  remote_origin: null
+  remote_status: not_configured
+  app_repo_path: /home/isucon
+  app_source_path: /home/isucon/webapp
+  config_capture_path: /home/isucon/common
+  per_server_config_paths:
+    s1: /home/isucon/s1
+    s2: /home/isucon/s2
+    s3: /home/isucon/s3
+  initial_commit_message: initial state
+  initial_commit_hash: f0b44a2
+  observability_commit_hash: 18cd32d
+  template_layout_commit_hash: c9292f8
+  branch: main
+  tracked_initial_paths:
+    - /home/isucon/webapp
+    - /home/isucon/common
+    - /home/isucon/s1
+    - /home/isucon/s2
+    - /home/isucon/s3
+    - /home/isucon/.gitignore
+  iteration_policy:
+    - keep git status clean before each hypothesis
+    - make one logical change per benchmark
+    - commit only improved and valid changes
+    - restore or revert regressed changes
+  never_commit:
+    - raw secrets from /home/isucon/env.sh
+    - private keys
+    - large generated logs
+    - build caches and __pycache__
+  mcp_verified: true
+  latest_status: clean
+logs:
+  startup_checklist: docs/isucon-startup-checklist.md
+  observability_enabled: true
+  app_journal_units:
+    - isuride-go.service
+    - isuride-matcher.service
+    - isuride-payment_mock.service
+  nginx_access_log: /var/log/nginx/access.log
+  nginx_access_log_format: ltsv
+  nginx_error_log: /var/log/nginx/error.log
+  mysql_error_log: /var/log/mysql/error.log
+  mysql_slow_log: /var/log/mysql/mysql-slow.log
+  mysql_slow_log_expected:
+    slow_query_log: true
+    long_query_time: 0.0
+  mcp_verified: true
+  latest_top_route: /api/chair/notification
+api_aggregation:
+  tool: alp or pprotein
+  matching_groups:
+    - ^/api/app/users$
+    - ^/api/app/payment-methods$
+    - ^/api/app/nearby-chairs$
+    - ^/api/app/rides$
+    - ^/api/app/rides/estimated-fare$
+    - ^/api/app/rides/[^/]+/evaluation$
+    - ^/api/app/notification$
+    - ^/api/chair/chairs$
+    - ^/api/chair/activity$
+    - ^/api/chair/coordinate$
+    - ^/api/chair/rides/[^/]+/status$
+    - ^/api/chair/notification$
+    - ^/api/owner/owners$
+    - ^/api/owner/chairs$
+    - ^/api/owner/chairs/[^/]+$
+    - ^/api/owner/sales$
+    - ^/api/internal/matching$
+pprotein:
+  enabled: true
+  host: s2
+  public_ip: 13.115.244.165
+  private_ip: 192.168.0.12
+  base_url: http://127.0.0.1:9000
+  internal_url: http://s2:9000
+  dashboard_url: http://127.0.0.1:9000/#/group/
+  targets_file: /home/isucon/data/targets.json
+  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@13.115.244.165
+  collection:
+    mode: initialize_hook
+    collect_endpoint: /api/group/collect
+    timeout_seconds: 90
+    trigger_options:
+      - manual
+      - agent
+      - initialize_hook
+  notes:
+    - Current practice policy is to collect pprotein from the application when bench calls POST /api/initialize.
+    - The initialize hook should call the pprotein collect endpoint asynchronously and best-effort.
+    - The hook must never fail initialization when pprotein is unavailable.
+    - Manual collect remains available as a fallback for human-controlled runs.
+services:
+  app:
+    - isuride-go.service
+    - isuride-matcher.service
+    - isuride-payment_mock.service
+    - mysql.service
+    - nginx.service
+deploy:
+  command: cd /home/isucon/common && sudo -u isucon bash ./deploy.sh
+  timeout_seconds: 180
+  health_services:
+    - isuride-go.service
+    - isuride-matcher.service
+    - isuride-payment_mock.service
+    - mysql.service
+    - nginx.service
+notes:
+  - Direct IP targets hit the default nginx vhost and make /client return 404.
+  - Use --target with a *.xiv.isucon.net host and --addr with the app private IP.
+  - The bench host runs the AMI payment_mock on :12345, so benchmark runs use :12346.
+  - Do not store database passwords or AWS secrets in this file.
