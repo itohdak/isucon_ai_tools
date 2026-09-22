@@ -23,10 +23,11 @@ When a milestone is completed, update:
 - pprotein collection policy: the app starts pprotein collection when bench calls `POST /api/initialize`, so human-run and Codex-run benchmarks share the same observability path.
 - Analysis policy: rank API and SQL bottlenecks primarily by total latency (`sum` / `sum-query-time`) so high-frequency medium-latency paths are not missed.
 - Instance split policy: collect resource metrics during bench and split web/app/db only when CPU, memory, disk IO, or network evidence shows a resource bottleneck.
-- Latest app optimization commit: `9feff84 collapse getChairStats N+1 into single EXISTS query`.
-- Latest verified benchmark: `pass=true`, score `5308` (accepted after a same-conditions A/B against the previous commit showed the day's benchmark noise floor had risen; see notes below).
-- Latest iteration report: `reports/iterations/iteration-20260922-205723.md`.
-- Benchmark noise note: on 2026-09-22 evening, repeated runs of the same commit ranged roughly `5017`-`5308`, and re-measuring the previous commit (`47398b8`) scored `5233` versus its own earlier-recorded `5336`. Treat single-run deltas under ~300 points as inconclusive; prefer a same-conditions A/B redeploy before accept/reject when a change looks like a regression.
+- Latest app optimization commit: `085609b Revert "remove unnecessary FOR SHARE lock on immutable user read"` (content-equivalent to `9feff84`).
+- Latest verified benchmark: `pass=true`, score `5215`, errors `map[]`.
+- Latest iteration report: `reports/iterations/iteration-20260922-211313.md`.
+- Benchmark noise note: on 2026-09-22 evening, repeated runs of the same commit ranged roughly `5017`-`5324`, and re-measuring an earlier commit (`47398b8`) scored `5233` versus its own earlier-recorded `5336`. Treat single-run deltas under ~300 points as inconclusive; prefer a same-conditions A/B redeploy before accept/reject when a change looks like a regression.
+- Rejected experiment: removing the `FOR SHARE` lock on the `users` read in `chairGetNotification` (commit `65d9b68`). Score looked flat, but the 3rd of 3 benchmark runs failed outright with `CODE=15` (a chair received a new ride notification before its current ride's completion notification) — a real notification/matching invariant violation, not just noise. Reverted (`085609b`); re-measuring the pre-change commit twice showed no such failure. Working theory: the lock removal sped up notification polling enough to raise the odds of hitting a pre-existing race elsewhere (likely matching/ride-assignment), rather than the lock itself being load-bearing. Do not retry this specific change without first investigating that race. See `reports/iterations/iteration-20260922-211313.md`.
 
 ## Milestone 1: Define Environment And Execution Settings
 
