@@ -31,7 +31,7 @@ class Orchestrator:
         self.config_path = config_path
         self.guardrails = Guardrails()
         self.benchmark = BenchmarkMCP(config=self.config, runner=runner)
-        self.netdata = NetdataMCP(config=self.config, runner=runner)
+        self.netdata = NetdataMCP(config=self.config)
         self.mysql = MySQLMCP(config=self.config, runner=runner)
         self.logs = LogsMCP(config=self.config, runner=runner)
         self.git = GitMCP(config=self.config, runner=runner, guardrails=self.guardrails)

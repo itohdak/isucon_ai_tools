@@ -55,33 +55,37 @@ class TestCore(unittest.TestCase):
         self.assertIn("points", result.data)
 
     def test_netdata_mcp_snapshot_with_real_config_shape(self):
-        output = """UPTIME
- 12:00:00 up 1 day,  1 user,  load average: 0.25, 0.50, 0.75
-FREE
-               total        used        free      shared  buff/cache   available
-Mem:            1024         256         128           0         640         700
-DF
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/root        20G  8.0G   12G  40% /
-PS
-    PID COMMAND         %CPU %MEM
-   1234 isuride          5.5  3.0
-"""
+        chart_responses = {
+            "system.cpu": {"labels": ["time", "user", "system", "idle"], "data": [[0, 3.4, 1.2, 95.4]]},
+            "system.load": {"labels": ["time", "load1", "load5", "load15"], "data": [[0, 0.25, 0.5, 0.75]]},
+            "system.ram": {"labels": ["time", "free", "used", "cached", "buffers"], "data": [[0, 128, 256, 600, 40]]},
+            "system.io": {"labels": ["time", "in", "out"], "data": [[0, 12.0, 34.0]]},
+        }
 
-        def fake_runner(command, **kwargs):
-            return subprocess.CompletedProcess(args=command, returncode=0, stdout=output, stderr="")
+        requested_urls = []
+
+        def fake_fetcher(url):
+            requested_urls.append(url)
+            for chart, payload in chart_responses.items():
+                if f"chart={chart}" in url:
+                    return payload
+            raise AssertionError(f"unexpected chart requested: {url}")
 
         mcp = NetdataMCP(
             config={
-                "ssh": {"user": "ubuntu", "private_key_path": "/tmp/key.pem"},
-                "hosts": {"app": {"public_ip": "203.0.113.11"}},
+                "netdata": {
+                    "parent": {"url": "http://192.168.0.12:19999"},
+                    "hosts": {"app": "s1"},
+                }
             },
-            runner=fake_runner,
+            fetcher=fake_fetcher,
         )
         result = mcp.get_snapshot(host="app", window_seconds=300)
         self.assertEqual(result.status, "ok")
-        self.assertEqual(result.data["metrics"]["load_average"]["load1"], 0.25)
-        self.assertEqual(result.data["metrics"]["memory"]["used_percent"], 25.0)
+        self.assertEqual(result.data["netdata_host"], "s1")
+        self.assertEqual(result.data["metrics"]["load"]["load1"], 0.25)
+        self.assertEqual(result.data["metrics"]["memory"]["used"], 256)
+        self.assertTrue(all("/host/s1/api/v1/" in url for url in requested_urls))
 
     def test_orchestrator_plan(self):
         orchestrator = Orchestrator()

@@ -1,8 +1,11 @@
 # ISUCON AI Tools Architecture
 
-Last updated: 2026-09-21
+Last updated: 2026-09-22
 
 This document is the map of the current Codex/agent-side architecture. Update it whenever Skills, MCPs, or external observability flows change.
+
+Operational agent roles and handoff rules are defined in `AGENTS.md`.
+This architecture document explains the coded automation layer; `AGENTS.md` explains how Codex should use role-specific agents during improvement loops.
 
 ## Overview
 
@@ -41,7 +44,7 @@ flowchart TB
   Guardrails --> DeployMCP
 
   BenchmarkMCP --> BenchHost[Bench host]
-  NetdataMCP --> AppHost[App host via SSH]
+  NetdataMCP --> NetdataParent[Netdata parent on pprotein host]
   MySQLMCP --> AppHost
   LogsMCP --> AppHost
   GitMCP --> AppHost
@@ -72,10 +75,27 @@ sequenceDiagram
   Orchestrator->>Pprotein: collect only for MCP-only baseline runs
   Orchestrator->>MCPs: benchmark, logs, mysql, git, resources
   MCPs->>AppHost: SSH / MySQL / journalctl / git / deploy
+  MCPs->>Pprotein: Netdata parent query for resource metrics
   MCPs-->>Orchestrator: ToolResult
   Orchestrator->>Reports: write baseline/history/iteration files
   Codex->>Human: summary and next action
 ```
+
+## Operational Agents
+
+The current coded layer is `Orchestrator + Skill + MCP`.
+For serious optimization loops, Codex should also follow the role-based workflow in `AGENTS.md`.
+
+Default roles:
+
+- Profiler Agent
+- App Understanding Agent
+- SQL Agent
+- Implementer Agent
+- Verifier Agent
+- Recorder Agent
+
+Iteration reports should record which of these agents were used and what they concluded.
 
 ## Skills
 
@@ -95,7 +115,7 @@ sequenceDiagram
 | MCP | Current Role | Notes |
 | --- | --- | --- |
 | `BenchmarkMCP` | Runs the ISUCON benchmark on the bench host and parses score/pass/error counts. | Real SSH-backed path exists. |
-| `NetdataMCP` | Collects lightweight resource snapshots. | Despite the name, currently uses `uptime`, `free`, `df`, and `ps`; Netdata is not installed. |
+| `NetdataMCP` | Queries per-host resource metrics (CPU, load, memory, disk IO) from the Netdata parent on the pprotein host. | All instances stream to that parent (`isucon_ansible/roles/general`); no per-host SSH needed. Falls back to mock data when `netdata.parent` is absent from config. |
 | `MySQLMCP` | Reads slow query log, EXPLAINs queries, and checks processlist. | SSH-backed `sudo mysql` flow. |
 | `LogsMCP` | Reads recent journal logs and summarizes Nginx LTSV routes. | Used in baseline reports. |
 | `GitMCP` | Reads status/diff and guarded restore. | Guardrails enforce repo path and restore path constraints. |
@@ -114,6 +134,7 @@ sequenceDiagram
 | App host `s1` | Runs ISUCON app, MySQL, Nginx, services, git repo. |
 | Bench host `s2` | Runs official/practice benchmark command. |
 | pprotein host `s2` | Shared dashboard for pprof, httplog, slowlog, and future human/agent collaboration. It is not exposed publicly; use SSH tunnel `localhost:9000`. |
+| Netdata parent (pprotein host `s2`) | Receives streamed metrics from every instance; single place to query per-host CPU/load/memory/disk. Not exposed publicly; use SSH tunnel to `localhost:19999`. |
 | GitHub repo | Shared source, deploy state, docs, reports, and decision history. |
 
 ## Benchmark Collection Policy
@@ -131,4 +152,5 @@ Update this file when any of these change:
 - An MCP is added, removed, renamed, or changes from mock to real behavior.
 - Guardrails start protecting a new operation type.
 - pprotein/manual/agent collection flow changes.
+- Operational agent roles or handoff rules in `AGENTS.md` change.
 - Reports move location or change schema.

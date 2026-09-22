@@ -9,12 +9,12 @@ ssh:
 hosts:
   app:
     name: isucon13-1
-    public_ip: 18.180.203.145
+    public_ip: 13.230.132.249
     private_ip: 192.168.0.11
     app_path: /home/isucon/webapp
   bench:
     name: isucon14-bench
-    public_ip: 13.115.244.165
+    public_ip: 35.78.44.172
     private_ip: 192.168.0.12
     bench_binary: /home/isucon/bench
 benchmark:
@@ -126,13 +126,13 @@ api_aggregation:
 pprotein:
   enabled: true
   host: s2
-  public_ip: 13.115.244.165
+  public_ip: 35.78.44.172
   private_ip: 192.168.0.12
   base_url: http://127.0.0.1:9000
   internal_url: http://s2:9000
   dashboard_url: http://127.0.0.1:9000/#/group/
   targets_file: /home/isucon/data/targets.json
-  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@13.115.244.165
+  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@35.78.44.172
   collection:
     mode: initialize_hook
     collect_endpoint: /api/group/collect
@@ -146,6 +146,21 @@ pprotein:
     - The initialize hook should call the pprotein collect endpoint asynchronously and best-effort.
     - The hook must never fail initialization when pprotein is unavailable.
     - Manual collect remains available as a fallback for human-controlled runs.
+netdata:
+  enabled: true
+  parent:
+    host: s2
+    private_ip: 192.168.0.12
+    port: 19999
+    url: http://192.168.0.12:19999
+  dashboard_url: http://127.0.0.1:19999
+  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 19999:127.0.0.1:19999 ubuntu@35.78.44.172
+  hosts:
+    app: s1
+    bench: s2
+  notes:
+    - All instances (webapp + pprotein) stream their metrics to the netdata parent running on the pprotein host; see isucon_ansible/roles/general (stream.conf.parent.j2 / stream.conf.child.j2).
+    - Per-host metrics are queried through the parent at http://<parent>:19999/host/<netdata_hostname>/api/v1/... using the hostnames listed in `hosts` above.
 services:
   app:
     - isuride-go.service
