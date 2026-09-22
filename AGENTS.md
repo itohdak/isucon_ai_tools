@@ -63,12 +63,12 @@ At the start of a non-trivial improvement loop, Codex should spawn or otherwise 
 
 Each role must receive a narrow question and must return a short, actionable output.
 
-Recommended prompts:
+Every dispatch prompt should tell the agent to read its skill doc first (`docs/skills/<role>.md` — see Skill And MCP Mapping below), since that's where the concrete, currently-correct commands and gotchas live. Recommended prompts:
 
-- Profiler Agent: "Using the latest benchmark and pprotein artifacts, rank bottlenecks by total API time, total SQL time, and benchmark errors. Do not propose code changes yet."
-- Resource Monitor Agent: "For the benchmark run that just finished, report per-host CPU/load/memory/disk from the Netdata parent and state whether any instance was resource-bound during the run."
-- App Understanding Agent: "For the top candidate APIs, identify ISUCON14 rule risks and invariants that must not break."
-- SQL Agent: "Run `slp --sort sum-query-time --reverse` (or an equivalent full aggregation) to get the complete ranked table of query shapes by total Query_time — not a narrative summary. Report the top 10-15 rows verbatim in your findings. Then inspect schema/index/query patterns for those candidates and suggest low-risk database-side improvements. If you flag any query outside the top 10-15 by total time for a different reason (e.g. high per-call/max latency, or a known risk area), say so explicitly and justify it separately from the total-time ranking, rather than blending it into the same list without distinction."
+- Profiler Agent: "Read `docs/skills/profiler-agent.md` first. Using the latest benchmark and pprotein artifacts, rank bottlenecks by total API time, total SQL time, and benchmark errors. Do not propose code changes yet."
+- Resource Monitor Agent: "Read `docs/skills/resource-monitor-agent.md` first. For the benchmark run that just finished, report per-host CPU/load/memory/disk and state whether any instance was resource-bound during the run, using the exact run window, not a post-hoc snapshot."
+- App Understanding Agent: "Read `docs/skills/app-understanding-agent.md` first. For the top candidate APIs, identify ISUCON14 rule risks and invariants that must not break."
+- SQL Agent: "Read `docs/skills/sql-agent.md` first. Run `slp --sort sum-query-time --reverse` (or an equivalent full aggregation) to get the complete ranked table of query shapes by total Query_time — not a narrative summary. Report the top 10-15 rows verbatim in your findings. Then inspect schema/index/query patterns for those candidates and suggest low-risk database-side improvements. If you flag any query outside the top 10-15 by total time for a different reason (e.g. high per-call/max latency, or a known risk area), say so explicitly and justify it separately from the total-time ranking, rather than blending it into the same list without distinction."
 
 Codex should continue useful local work while these agents run, such as checking git status, reading the latest report, or preparing the benchmark context.
 
@@ -76,7 +76,7 @@ Codex should continue useful local work while these agents run, such as checking
 
 ### When Implementation Can Be Delegated
 
-Spawn an Implementer Agent only when all of these are true:
+An Implementer Agent (delegated or Codex acting directly) should read `docs/skills/implementer-agent.md` first for deploy gotchas and change-size discipline. Spawn an Implementer Agent only when all of these are true:
 
 - The hypothesis has already been chosen.
 - The file ownership is narrow and explicit.
@@ -88,7 +88,7 @@ In that case Codex may implement directly, but the report must explain why.
 
 ### Verification
 
-Verification can be handled by a Verifier Agent when it can run independently from ongoing analysis.
+A Verifier Agent (delegated or Codex acting directly) should read `docs/skills/verifier-agent.md` first, particularly for run-count discipline (a single benchmark run is not conclusive in this environment). Verification can be handled by a Verifier Agent when it can run independently from ongoing analysis.
 At minimum, the Verifier Agent should check:
 
 - git status and commit hash
@@ -103,7 +103,7 @@ If Codex verifies directly, record that in `Agents Used`.
 
 ### Recorder
 
-After every benchmark-backed change, Recorder Agent or Codex must update:
+A Recorder Agent (delegated or Codex acting directly) should read `docs/skills/recorder-agent.md` first — in particular, nothing is read automatically by a future session, so records must stand alone. After every benchmark-backed change, Recorder Agent or Codex must update:
 
 - an iteration report under `reports/iterations/`
 - `MILESTONES.md` when the overall status changes
@@ -240,15 +240,27 @@ Ask the human before:
 
 ## Skill And MCP Mapping
 
-| Agent | Useful Skills | Useful MCPs |
-| --- | --- | --- |
-| Profiler Agent | `baseline`, `monitor`, `trace_analysis`, `analyze_iteration` | `BenchmarkMCP`, `PproteinMCP`, `LogsMCP`, `MySQLMCP`, `NetdataMCP` |
-| Resource Monitor Agent | `monitor`, `baseline` | `NetdataMCP` |
-| App Understanding Agent | `trace_analysis`, `analyze_iteration` | `FilesystemMCP`, `LogsMCP`, `HistoryMCP` |
-| SQL Agent | `sql_tune`, `trace_analysis` | `MySQLMCP`, `LogsMCP` |
-| Implementer Agent | `deploy` after patch review | `FilesystemMCP`, `GitMCP`, `ShellMCP`, `DeployMCP` |
-| Verifier Agent | `baseline`, `deploy`, `analyze_iteration` | `BenchmarkMCP`, `DeployMCP`, `LogsMCP`, `PproteinMCP`, `GitMCP` |
-| Recorder Agent | `record_improvement` | `HistoryMCP`, `IterationMCP`, `GitMCP` |
+Each Agent Roster role has a markdown **skill doc** under `docs/skills/` containing the concrete, verified commands, access patterns, and known gotchas for that role, written from what has actually worked (and failed) in this environment. **Read the relevant skill doc before dispatching or acting as that role** — it is the current, trustworthy operational reference for that role, more so than the "Useful MCPs" column below.
+
+The Python `isucon_ai_tools/isucon_ai_tools/mcp/*.py` layer is only partially real, and has not been kept in sync with infrastructure changes (notably the MySQL split to `s3`). Verified status as of the DB split:
+
+- `apm.py` — **fully mock**: hardcoded fake data (`/api/users`, `/api/orders` — routes that don't even exist in this app), not connected to anything.
+- `netdata.py` — real code, correctly implements the Netdata HTTP API, but **currently non-functional**: it's configured to hit a private VPC IP unreachable from the operator machine (verified by running it — every metric fetch times out). Use the Resource Monitor Agent skill's SSH+localhost pattern instead.
+- `mysql.py` — real SSH-based code, but **hardcoded to the app host (`s1`)** for both live queries and slow-log tailing. Since the DB split, this silently reads `s1`'s stale, no-longer-updated slow log instead of erroring. Use the SQL Agent skill's direct-to-`s3` pattern instead.
+- `git.py` (and structurally similar `benchmark.py`/`deploy.py`/`logs.py`) — real and verified working (SSH to the public IP, matching what the skill docs also do directly).
+- `filesystem.py`/`history.py`/`iteration.py`/`shell.py` — local-only operations, not host-dependent, not verified against the split.
+
+None of this MCP/orchestrator layer has actually been used to do real ISUCON tuning work this session — every real interaction with the live environment (SSH, MySQL, benchmarks, CloudFormation, Ansible, git) has gone through direct Bash/SSH commands inside an Agent-tool-dispatched subagent following that role's skill doc. Treat the skill docs as the source of truth; treat "Useful MCPs" as aspirational/partially-stale unless you've just re-verified the specific tool you're about to rely on.
+
+| Agent | Skill Doc | Useful Skills (Python registry) | Useful MCPs (verify before trusting — see above) |
+| --- | --- | --- | --- |
+| Profiler Agent | `docs/skills/profiler-agent.md` | `baseline`, `monitor`, `trace_analysis`, `analyze_iteration` | `BenchmarkMCP`, `PproteinMCP`, `LogsMCP`, `MySQLMCP`, `NetdataMCP` |
+| Resource Monitor Agent | `docs/skills/resource-monitor-agent.md` | `monitor`, `baseline` | `NetdataMCP` (broken — see above) |
+| App Understanding Agent | `docs/skills/app-understanding-agent.md` | `trace_analysis`, `analyze_iteration` | `FilesystemMCP`, `LogsMCP`, `HistoryMCP` |
+| SQL Agent | `docs/skills/sql-agent.md` | `sql_tune`, `trace_analysis` | `MySQLMCP` (stale post-split — see above), `LogsMCP` |
+| Implementer Agent | `docs/skills/implementer-agent.md` | `deploy` after patch review | `FilesystemMCP`, `GitMCP`, `ShellMCP`, `DeployMCP` |
+| Verifier Agent | `docs/skills/verifier-agent.md` | `baseline`, `deploy`, `analyze_iteration` | `BenchmarkMCP`, `DeployMCP`, `LogsMCP`, `PproteinMCP`, `GitMCP` |
+| Recorder Agent | `docs/skills/recorder-agent.md` | `record_improvement` | `HistoryMCP`, `IterationMCP`, `GitMCP` |
 
 ## Current Environment Notes
 
@@ -272,3 +284,5 @@ Update this file when:
 - A new Skill or MCP changes how agents work.
 - The benchmark/pprotein/report contract changes.
 - The safety boundary changes.
+
+Update the relevant `docs/skills/<role>.md` (separately from this file) whenever a session discovers a durable, reusable operational fact for that role — a new gotcha, a command that stopped working, an access pattern that changed (e.g. a future infrastructure split), or a mistake worth preventing next time. Keep entries concrete (exact commands, exact file paths, what actually happened) rather than generic advice — that's what makes them worth reading instead of re-deriving.
