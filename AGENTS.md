@@ -68,7 +68,7 @@ Recommended prompts:
 - Profiler Agent: "Using the latest benchmark and pprotein artifacts, rank bottlenecks by total API time, total SQL time, and benchmark errors. Do not propose code changes yet."
 - Resource Monitor Agent: "For the benchmark run that just finished, report per-host CPU/load/memory/disk from the Netdata parent and state whether any instance was resource-bound during the run."
 - App Understanding Agent: "For the top candidate APIs, identify ISUCON14 rule risks and invariants that must not break."
-- SQL Agent: "For the top slow queries, inspect schema/index/query patterns and suggest low-risk database-side improvements."
+- SQL Agent: "Run `slp --sort sum-query-time --reverse` (or an equivalent full aggregation) to get the complete ranked table of query shapes by total Query_time — not a narrative summary. Report the top 10-15 rows verbatim in your findings. Then inspect schema/index/query patterns for those candidates and suggest low-risk database-side improvements. If you flag any query outside the top 10-15 by total time for a different reason (e.g. high per-call/max latency, or a known risk area), say so explicitly and justify it separately from the total-time ranking, rather than blending it into the same list without distinction."
 
 Codex should continue useful local work while these agents run, such as checking git status, reading the latest report, or preparing the benchmark context.
 
