@@ -146,6 +146,10 @@ For every benchmark:
 4. Replace random matching with candidate selection using latest chair location and model speed.
 5. Tune notification retry interval after the above, watching completed rides and warning count, not only latency.
 
+## Known Fixed Issue: CODE=15 (Stranded COMPLETED Notification)
+
+Fixed on 2026-09-22, commit `9179ded`. `chairGetNotification` always reports on the chair's most-recently-`updated_at` ride. `internalGetMatching` used to consider a chair "free" as soon as its previous ride's `COMPLETED` status row existed, without checking whether the chair had actually polled and received it (`chair_sent_at`). If the matcher reassigned the chair inside that gap, the old ride's `COMPLETED` notification became permanently unreachable (the query would only ever see the newer ride), and the chair received a new ride's notification without ever seeing its previous ride complete — bench `CODE=15`. This was a deterministic logic bug, not a concurrency race (the matcher is a single sequential process, confirmed via `ps aux` and httplog timing analysis showing no overlapping `/api/internal/matching` calls). Fixed by requiring `chair_sent_at IS NOT NULL` on the `COMPLETED` row before a chair counts as free. Any future change that increases overall throughput/matching cadence could have made this more likely to surface, so treat similar "is X done" checks elsewhere (anything gating reassignment/reuse based on a status row's mere existence rather than its delivery) with the same suspicion.
+
 ## Guardrails
 
 - Do not optimize by dropping required status notifications.
@@ -153,3 +157,4 @@ For every benchmark:
 - Do not let `/initialize` skip derived state reset.
 - Do not rely on external compute resources for scoring behavior.
 - Do not keep a final result if warnings/errors make the run unstable.
+- When gating reassignment/reuse of a resource (e.g. a chair) on "has event X happened," prefer "has X been delivered/observed" over "does X exist in the DB" if a downstream consumer needs to observe X before the resource is repurposed (see CODE=15 fix above).
