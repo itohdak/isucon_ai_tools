@@ -264,6 +264,8 @@ None of this MCP/orchestrator layer has actually been used to do real ISUCON tun
 
 ## Current Environment Notes
 
+**⚠️ As of 2026-09-23 the environment described below is torn down (CloudFormation stack `isucon14` deleted for cost savings during a break). Read `docs/environment-teardown-restore.md` and restore it before relying on any IP/host below.**
+
 - App host: `s1`, private `192.168.0.11`, public `13.230.132.249`.
 - Bench and pprotein host: `s2`, private `192.168.0.12`, public `35.78.44.172`.
 - DB host: `s3`, private `192.168.0.13`, public `18.176.6.65` — dedicated MySQL host, split from `s1` on 2026-09-23 after the Resource Monitor Agent found `s1` CPU-bound (mysqld averaging ~97.7% CPU, saturating one of `s1`'s 2 vCPUs) during a valid benchmark run. Provisioned via a CloudFormation update to the existing `isucon14` stack, which already had unused `Instance3`/`InstanceIP3` resources defined (see `reports/iterations/` for the exact iteration). Only `mysql.service` runs there; `isuride-go.service`, `isuride-matcher.service`, `isuride-payment_mock.service`, and `nginx.service` are stopped and disabled on it.
