@@ -11,18 +11,22 @@ When a milestone is completed, update:
 
 ## Current Status
 
-- Last updated: 2026-09-21
+- Last updated: 2026-09-22
 - Overall phase: Operational iteration
 - Next milestone: Continue evidence-driven tuning
 - Startup checklist: `docs/isucon-startup-checklist.md`
 - Agent architecture: `docs/agent-architecture.md`
 - ISUCON14 improvement approach: `docs/isucon14-improvement-approach.md`
+- Resource split policy: `docs/resource-scaling-policy.md`
+- MySQL operations tips: `docs/mysql-operations-tips.md`
 - pprotein: deployed on `s2`, collecting from `s1` via pprotein-agent; dashboard is available through SSH tunnel to `localhost:9000`.
 - pprotein collection policy: the app starts pprotein collection when bench calls `POST /api/initialize`, so human-run and Codex-run benchmarks share the same observability path.
 - Analysis policy: rank API and SQL bottlenecks primarily by total latency (`sum` / `sum-query-time`) so high-frequency medium-latency paths are not missed.
-- Latest app optimization commit: `40f918b cache chair total distance`.
-- Latest verified benchmark: `pass=true`, score `5152`, errors `map[]`.
-- Latest iteration report: `reports/iterations/iteration-20260921-172842.md`.
+- Instance split policy: collect resource metrics during bench and split web/app/db only when CPU, memory, disk IO, or network evidence shows a resource bottleneck.
+- Latest app optimization commit: `9feff84 collapse getChairStats N+1 into single EXISTS query`.
+- Latest verified benchmark: `pass=true`, score `5308` (accepted after a same-conditions A/B against the previous commit showed the day's benchmark noise floor had risen; see notes below).
+- Latest iteration report: `reports/iterations/iteration-20260922-205723.md`.
+- Benchmark noise note: on 2026-09-22 evening, repeated runs of the same commit ranged roughly `5017`-`5308`, and re-measuring the previous commit (`47398b8`) scored `5233` versus its own earlier-recorded `5336`. Treat single-run deltas under ~300 points as inconclusive; prefer a same-conditions A/B redeploy before accept/reject when a change looks like a regression.
 
 ## Milestone 1: Define Environment And Execution Settings
 
@@ -50,8 +54,8 @@ Notes:
 
 - Keep secrets out of git.
 - Environment settings are recorded in `config/isucon14.yaml`.
-- Current app host: `18.180.203.145` public, `192.168.0.11` private, EC2 tag `Name=isucon13-1`.
-- Current bench host: `13.115.244.165` public, `192.168.0.12` private, EC2 tag `Name=isucon14-bench`.
+- Current app host: `13.230.132.249` public, `192.168.0.11` private, EC2 tag `Name=isucon13-1`.
+- Current bench host: `35.78.44.172` public, `192.168.0.12` private, EC2 tag `Name=isucon14-bench`.
 - SSH method: `ssh -i /home/itohdak/Downloads/isucon.pem ubuntu@<public-ip>`.
 - App path: `/home/isucon/webapp`.
 - Bench binary: `/home/isucon/bench` on the bench host.
