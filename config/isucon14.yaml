@@ -17,6 +17,14 @@ hosts:
     public_ip: 35.78.44.172
     private_ip: 192.168.0.12
     bench_binary: /home/isucon/bench
+  db:
+    name: isucon14-db
+    public_ip: 18.176.6.65
+    private_ip: 192.168.0.13
+    role: dedicated MySQL host (split from app host on 2026-09-23)
+    instance_id: i-09b55e06484e998b7
+    provisioned_via: "CloudFormation stack 'isucon14', logical resources Instance3/InstanceIP3 (previously present in the template but not deployed)"
+    app_services_disabled: [isuride-go.service, isuride-matcher.service, isuride-payment_mock.service, nginx.service]
 benchmark:
   working_directory: /home/isucon
   command:
@@ -42,11 +50,16 @@ benchmark:
     pass: true
     measured_at: "2026-09-21"
 mysql:
-  host: 127.0.0.1
+  host: 192.168.0.13
   port: 3306
   database: isuride
   version: 8.0.46-0ubuntu0.24.04.3
-  access_method: sudo mysql on app host
+  access_method: "sudo mysql on the db host (192.168.0.13); app connects over TCP as user isucon"
+  split_from_app_host: true
+  split_date: "2026-09-23"
+  app_env_sh_setting: 'ISUCON_DB_HOST="192.168.0.13"'
+  bind_address_override: s3/etc/mysql/mysql.conf.d/mysqld.cnf (bind-address 0.0.0.0, restricted at network layer by the security group to 192.168.0.0/24)
+  remote_user_setup: "created by webapp/sql/0-init.sql ('isucon'@'%'), run manually once on the db host since it is not part of the recurring /api/initialize -> init.sh flow"
   mcp_verified: true
   current_top_slow_query: SELECT * FROM rides WHERE chair_id IS NULL ORDER BY created_at LIMIT 1
   current_top_slow_query_explain_extra: Using where; Using filesort
