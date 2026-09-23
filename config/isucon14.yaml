@@ -5,7 +5,7 @@ aws:
   stack_name: isucon14
 ssh:
   user: ubuntu
-  private_key_path: /home/itohdak/Downloads/isucon.pem
+  private_key_path: /home/itohdak/.ssh/isucon.pem
 hosts:
   # Role mapping as of the 2026-09-23 recreation: s1+s2 are the load-targeted
   # hosts (app, db) and s3 is the dedicated bench/pprotein host — swapped
@@ -153,7 +153,7 @@ pprotein:
   internal_url: http://s3:9000
   dashboard_url: http://127.0.0.1:9000/#/group/
   targets_file: /home/isucon/data/targets.json
-  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@35.73.191.95
+  ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@35.73.191.95
   collection:
     mode: initialize_hook
     collect_endpoint: /api/group/collect
@@ -175,7 +175,7 @@ netdata:
     port: 19999
     url: http://192.168.0.13:19999
   dashboard_url: http://127.0.0.1:19999
-  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 19999:127.0.0.1:19999 ubuntu@35.73.191.95
+  ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 19999:127.0.0.1:19999 ubuntu@35.73.191.95
   hosts:
     app: s1
     db: s2

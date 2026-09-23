@@ -23,8 +23,8 @@ Current mapping:
 Current SSH command:
 
 ```bash
-ssh -i /home/itohdak/Downloads/isucon.pem ubuntu@18.180.203.145
-ssh -i /home/itohdak/Downloads/isucon.pem ubuntu@13.115.244.165
+ssh -i /home/itohdak/.ssh/isucon.pem ubuntu@18.180.203.145
+ssh -i /home/itohdak/.ssh/isucon.pem ubuntu@13.115.244.165
 ```
 
 Optional `~/.ssh/config` shape:
@@ -34,13 +34,13 @@ Host s1
   HostName 18.180.203.145
   User ubuntu
   Port 22
-  IdentityFile /home/itohdak/Downloads/isucon.pem
+  IdentityFile /home/itohdak/.ssh/isucon.pem
 
 Host s2
   HostName 13.115.244.165
   User ubuntu
   Port 22
-  IdentityFile /home/itohdak/Downloads/isucon.pem
+  IdentityFile /home/itohdak/.ssh/isucon.pem
 ```
 
 ## Hostnames
@@ -81,7 +81,7 @@ ansible-playbook playbooks/deploy_all.yaml
 Verify the dashboard:
 
 ```bash
-ssh -i /home/itohdak/Downloads/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@13.115.244.165
+ssh -i /home/itohdak/.ssh/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@13.115.244.165
 ```
 
 Then open `http://127.0.0.1:9000/#/group/`.
@@ -188,6 +188,34 @@ ssh netdata -fN
 Open:
 
 - `http://localhost:19991`
+- `http://localhost:19992`
+- `http://localhost:19993`
+
+## Benchmark-Time Resource Monitoring
+
+Resource metrics must be collected during benchmark runs before considering web/app/db instance separation.
+
+Default rule:
+
+- Do not split web/app/db only because extra servers are available.
+- Split only when CPU, memory, disk IO, or network metrics during bench show a bottleneck that the split should relieve.
+- If CPU idle remains high, prioritize API/SQL/application behavior before instance separation.
+
+Use Netdata when installed. Otherwise sample with:
+
+```bash
+vmstat 1
+pidstat -durh 1
+mpstat -P ALL 1
+iostat -xz 1
+```
+
+Record the before/after resource evidence in the iteration report if an instance split is proposed or attempted.
+
+See also:
+
+- `docs/resource-scaling-policy.md`
+- `docs/mysql-operations-tips.md`
 - `http://localhost:19992`
 - `http://localhost:19993`
 

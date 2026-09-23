@@ -73,7 +73,7 @@ Notes:
 - Environment settings are recorded in `config/isucon14.yaml`.
 - Current app host: `13.230.132.249` public, `192.168.0.11` private, EC2 tag `Name=isucon13-1`.
 - Current bench host: `35.78.44.172` public, `192.168.0.12` private, EC2 tag `Name=isucon14-bench`.
-- SSH method: `ssh -i /home/itohdak/Downloads/isucon.pem ubuntu@<public-ip>`.
+- SSH method: `ssh -i /home/itohdak/.ssh/isucon.pem ubuntu@<public-ip>`.
 - App path: `/home/isucon/webapp`.
 - Bench binary: `/home/isucon/bench` on the bench host.
 - App services observed: `isuride-go.service`, `isuride-matcher.service`, `isuride-payment_mock.service`, `mysql.service`, `nginx.service`.

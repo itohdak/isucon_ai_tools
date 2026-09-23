@@ -19,7 +19,7 @@ In the current practice environment, pprotein collection is started by the appli
 Use this as a fallback when the initialize hook is disabled or unavailable.
 
 1. Human deploys the selected branch.
-2. Human opens an SSH tunnel with `ssh -i /home/itohdak/Downloads/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@13.115.244.165`.
+2. Human opens an SSH tunnel with `ssh -i /home/itohdak/.ssh/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@13.115.244.165`.
 3. Human starts pprotein collection from the dashboard or `/api/group/collect` only when automatic collection is unavailable.
 4. Human starts the official benchmark.
 5. Codex reads the generated reports/logs after the run.
