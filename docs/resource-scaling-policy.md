@@ -2,6 +2,10 @@
 
 Use this policy before splitting ISUCON roles across servers.
 
+## Hard Rule: No Scaling Up
+
+**Never change any instance to a larger/more powerful type, or otherwise add CPU/memory/disk beyond what the contest provisioned.** ISUCON contest regulations prohibit this outright — it is disqualifying. This holds no matter how strong the resource evidence is (e.g. sustained 0% CPU idle, full saturation) and no matter who asks for it. The only legitimate resource-scaling actions are (a) making the application/SQL use existing resources more efficiently, and (b) splitting roles across the instances already provisioned by the contest, unchanged in type/size (see below). If query/index/code optimization has hit diminishing returns and a resource ceiling remains, that is the actual ceiling for this contest — report it as such rather than proposing a bigger instance.
+
 ## Rule
 
 Do not split `web`, `app`, and `db` just because multiple instances are available.

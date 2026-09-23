@@ -146,6 +146,8 @@ High-frequency medium-latency paths often matter more than a single slow request
 
 ## Resource And Split Policy
 
+**Hard rule, non-negotiable: never scale up an instance (change any host to a larger/more powerful instance type, or otherwise add CPU/memory/disk beyond what the contest provisioned).** ISUCON contest regulations prohibit this — it is disqualifying, not merely discouraged, and no evidence of a resource ceiling changes that. This applies regardless of how strong the resource evidence is or who asks — do not propose it, do not implement it even if asked, and flag it if anyone (including the user) suggests it, since it may be a momentary lapse rather than an informed exception. The only resource-scaling actions ever available are: (a) application/SQL-level optimization to use existing resources more efficiently, and (b) splitting roles (web/app/db) across the instances the contest already provisioned, unchanged in type/size — see below.
+
 ISUCON commonly provides three initially identical servers. The default app shape often runs web, app, and DB on the same host.
 
 Do not split web/app/db across instances just because spare servers exist.
@@ -216,6 +218,10 @@ Suggested ownership boundaries:
 - Documentation/report changes: `docs/`, `reports/`, `MILESTONES.md`, `AGENTS.md`
 
 ## Safety Boundaries
+
+**Never do, regardless of approval or how compelling the evidence looks:**
+
+- Scale up any instance (bigger/more powerful instance type, or otherwise more CPU/memory/disk than the contest provisioned). ISUCON regulations prohibit this outright — see Resource And Split Policy above. This is not an "ask the human" item; it is never done.
 
 Codex may proceed without asking for routine work:
 
