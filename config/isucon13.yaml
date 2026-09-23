@@ -8,28 +8,29 @@ ssh:
   user: isucon
   private_key_path: /home/itohdak/.ssh/isucon.pem
 hosts:
-  # Role mapping as of the 2026-09-23 environment creation: s1+s2 are the two
-  # load-targeted competition servers (kept infra-symmetric per standing user
-  # preference: same AMI, same netdata install method, same pprotein-agent
-  # setup), s3 is the dedicated bench/pprotein host. At baseline, only s1
-  # actually serves app traffic (app+db+pdns collocated, matching stock
-  # ISUCON single-host start); s2 is provisioned identically but idle,
-  # kept as a candidate for a future evidence-based split (see
-  # AGENTS.md's Resource And Split Policy -- never split without
-  # benchmark-time resource evidence, and never scale up instance type/size).
+  # Role mapping as of the 2026-09-23 MySQL split: s1 is now app+nginx+pdns
+  # only, s2 is a dedicated MySQL host, s3 remains the dedicated bench/pprotein
+  # host. Split executed 2026-09-23 on Resource Monitor Agent evidence (s1's
+  # 2 vCPUs saturated with mysqld ~1 core + app ~0.65 core, from iteration 5
+  # of the first tuning session) under the user's standing authorization to
+  # execute evidence-based splits without a per-instance approval pause (see
+  # AGENTS.md Safety Boundaries). Same instance type/size as provisioned --
+  # never a scale-up. Baseline before split: avg 17424.7 (3 runs). After
+  # split: avg 27934.7 (3 runs: 28773/27402/27629, all pass=true) -- a
+  # further ~1.6x gain confirming the CPU-saturation hypothesis.
   app:
     name: isucon13-1
     public_ip: 54.95.240.51
     private_ip: 192.168.0.11
     app_path: /home/isucon/webapp
     instance_id: i-0b8f3963983b3b94f
-    role: app + db + pdns (baseline single-host)
-  spare:
+    role: app + nginx + pdns (MySQL split out to s2 on 2026-09-23; local mysql.service stopped and disabled)
+  db:
     name: isucon13-2
     public_ip: 13.192.67.176
     private_ip: 192.168.0.12
     instance_id: i-0b8a4526a023d259f
-    role: provisioned identically to s1 (netdata kickstart, pprotein-agent) but idle at baseline; app-role services (isupipe-go, mysql, pdns, nginx) left running but unused until a resource-evidence-based split is decided
+    role: "dedicated MySQL host (split from s1 on 2026-09-23), serves both the isupipe app DB and PowerDNS's isudns backend DB. bind-address=0.0.0.0 in the tracked mysqld.cnf, restricted at the security-group/VPC layer to 192.168.0.0/24 (same pattern as the isucon14 project's DB split). isucon@'%' / isudns@'%' remote-capable users created via webapp/sql/initdb.d/00_create_database.sql (the AMI's default users were localhost-only). Deployed via common/deploy_db.sh (separate from common/deploy.sh, which is app-host-only and no longer touches mysql)."
   bench:
     name: isucon13-3
     public_ip: 35.73.166.230
@@ -58,14 +59,14 @@ benchmark:
   notes:
     - This is a self-managed practice environment (not the ISUCON13 portal), built from the team's own saved CloudFormation template. The portal-specific envcheck / aws-env-isucon-subdomain-address services are therefore not registered (envcheck reports "チェッカーの設定ファイルが読み込めませんでした"), which is expected and not a fault.
     - The app's local practice domain is u.isucon.local (self-signed cert in /etc/nginx/tls), not the real contest's u.isucon.dev.
-    - PowerDNS on s1 must have ISUCON13_POWERDNS_SUBDOMAIN_ADDRESS in /home/isucon/env.sh set to s1's own private IP (192.168.0.11), then `bash /home/isucon/webapp/pdns/init_zone.sh` re-run, so that pipe.u.isucon.local and *.u.isucon.local resolve to s1 when queried via --nameserver 192.168.0.11 from s3.
-  baseline_score: 3371 # original baseline, commit d5bd00d. Latest verified (2026-09-23, 10-iteration session end): 17424.7 avg (3-run, session-best single run 18136) at commit 45e1aaf after iteration 10 (shared-livestream N+1 fix in getLivecommentReportsHandler, ~5.17x baseline) -- see reports/iterations/iteration-20260923-234500.md. Iterations 2 (stats N+1 alone), 6 (PowerDNS index + persistent slow-query-log), and 7 (icon conditional-GET) were tested and REJECTED/reverted -- see their iteration reports -- each for a distinct, well-evidenced reason (connection pool contention, benchmark's adaptive DNS-attacker load, and per-request hashing CPU cost respectively). Known open issue: recurring GET /report 500 for reports on already-moderated-away comments (pre-existing, not introduced this session, needs human input on desired semantics before fixing).
+    - PowerDNS on s1 must have ISUCON13_POWERDNS_SUBDOMAIN_ADDRESS in /home/isucon/env.sh set to s1's own private IP (192.168.0.11), then `bash /home/isucon/webapp/pdns/init_zone.sh` re-run, so that pipe.u.isucon.local and *.u.isucon.local resolve to s1 when queried via --nameserver 192.168.0.11 from s3. (PowerDNS itself still runs on s1 post-split; only its isudns backend database moved to s2 -- see mysql section below.)
+  baseline_score: 3371 # original baseline, commit d5bd00d. After the first 10-iteration session (2026-09-23): 17424.7 avg (3-run, session-best single run 18136) at commit 45e1aaf (~5.17x baseline) -- see reports/iterations/iteration-20260923-234500.md. Iterations 2 (stats N+1 alone), 6 (PowerDNS index + persistent slow-query-log), and 7 (icon conditional-GET) were tested and REJECTED/reverted -- see their iteration reports. After the MySQL/s2 split (2026-09-23, commit 309c390): 27934.7 avg (3 runs: 28773/27402/27629, all pass=true) -- ~1.65x further gain, ~8.29x original baseline. See reports/summary/isucon13.md for the full chronological trail. Known open issue: recurring GET /report 500 for reports on already-moderated-away comments (pre-existing, not introduced by tuning, needs human input on desired semantics before fixing).
 mysql:
-  host: 127.0.0.1 (on s1, collocated with app at baseline)
+  host: 192.168.0.12 (s2, split from s1 on 2026-09-23)
   port: 3306
   database: isupipe
-  access_method: "sudo mysql isupipe on the app host"
-  second_database: isudns (PowerDNS zone backend, also MySQL-backed on the same host)
+  access_method: "sudo mysql isupipe on the db host (s2); app and pdns connect over TCP as isucon@'%'/isudns@'%'"
+  second_database: isudns (PowerDNS zone backend, also MySQL-backed, now on s2 -- pdns process itself still runs on s1 and connects to s2's isudns over TCP via /etc/powerdns/pdns.d/gmysql-host.conf, tracked at common/etc/powerdns/pdns.d/gmysql-host.conf)
 git:
   template_repository: https://github.com/itohdak/isucon_template (not used directly; app source came pre-installed on the ISUCON13 AMI at /home/isucon)
   remote_origin: git@github.com:itohdak/isucon13_practice_3.git
@@ -162,25 +163,29 @@ netdata:
   ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 19999:127.0.0.1:19999 isucon@35.73.166.230
   hosts:
     app: s1
-    spare: s2
+    db: s2
     bench: s3
 services:
   app:
     - isupipe-go.service
-    - mysql.service
     - pdns.service
     - nginx.service
+  db:
+    - mysql.service
 deploy:
   command: cd /home/isucon/common && sudo -u isucon env HOSTNAME=s1 bash ./deploy.sh
+  db_command: cd /home/isucon/common && sudo -u isucon env HOSTNAME=s2 bash ./deploy_db.sh
   notes:
-    - "deploy.sh follows the isucon14_practice pattern: copies common/etc/* (with s1/etc/* overrides taking priority), builds webapp/go/isupipe, re-applies the PowerDNS zone (bash /home/isucon/webapp/pdns/init_zone.sh), then restarts mysql, nginx, pdns, and isupipe-go.service."
-    - "Per the isucon14 session's discovered gotcha, $HOSTNAME resolves to the machine's actual hostname (e.g. ip-192-168-0-11), not s1/s2/s3 -- always invoke as `env HOSTNAME=s1 bash ./deploy.sh` (substituting the right logical name) so any future per-server override directory actually matches."
+    - "deploy.sh (app host, s1) copies common/etc/* (with s1/etc/* overrides taking priority; MySQL split out on 2026-09-23 so mysql.conf.d/mysqld.cnf is no longer relevant here), builds webapp/go/isupipe, re-applies the PowerDNS zone (bash /home/isucon/webapp/pdns/init_zone.sh), then restarts nginx, pdns, and isupipe-go.service. It no longer touches mysql at all."
+    - "deploy_db.sh (db host, s2, added 2026-09-23) copies only common/etc/mysql/mysql.conf.d/mysqld.cnf, restarts mysql, and truncates the slow query log. Separate from deploy.sh because common/etc/ also holds app-host-only files (nginx.conf, isupipe-go.service) that must never be copied onto s2."
+    - "Per the isucon14 session's discovered gotcha, $HOSTNAME resolves to the machine's actual hostname (e.g. ip-192-168-0-11), not s1/s2/s3 -- always invoke both scripts with an explicit `env HOSTNAME=<s1|s2>` so any future per-server override directory actually matches."
   health_services:
     - isupipe-go.service
-    - mysql.service
     - pdns.service
     - nginx.service
+  db_health_services:
+    - mysql.service
 notes:
-  - This is a from-scratch ISUCON13 (ISUPipe) practice environment, distinct from the ongoing ISUCON14 (ISURIDE) project recorded elsewhere in this repo's MILESTONES.md -- do not mix up route lists, service names (isuride-* vs isupipe-*), or schema between the two.
+  - This is a from-scratch ISUCON13 (ISUPipe) practice environment, distinct from the ongoing ISUCON14 (ISURIDE) project recorded elsewhere in this repo's `reports/summary/isucon14.md` -- do not mix up route lists, service names (isuride-* vs isupipe-*), or schema between the two.
   - Only /home/itohdak/Downloads/isupipe.md and /home/itohdak/Downloads/cautionary_note.md are authoritative ISUCON13 references; general internet search for ISUCON13 contest info is disallowed per user instruction.
   - Do not store database passwords or AWS secrets in this file.
