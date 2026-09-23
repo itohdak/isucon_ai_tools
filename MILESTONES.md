@@ -9,7 +9,18 @@ When a milestone is completed, update:
 - Notes
 - Any follow-up tasks
 
-## Current Status
+## Current Status — ISUCON13 (ISUPipe) — ACTIVE PROJECT
+
+- **New project started 2026-09-23**: ISUCON13's ISUPipe (livestreaming) app, a from-scratch environment separate from the ISUCON14 (ISURIDE) project logged further below in this file. Full facts in `config/isucon13.yaml` and `AGENTS.md`'s "Current Environment Notes — ISUCON13" section.
+- CloudFormation stack `isucon13` created from `isucon_cf_provisioning/isucon13/cf-template-isucon13.yaml` (profile `isucon15.prep`, region `ap-northeast-1`). `s1`=app (`54.95.240.51`/`192.168.0.11`), `s2`=spare/idle, kept infra-symmetric with `s1` (`13.192.67.176`/`192.168.0.12`), `s3`=bench+pprotein (`35.73.166.230`/`192.168.0.13`).
+- pprotein + netdata deployed via `isucon_ansible` (`deploy_general.yaml`, `deploy_pprotein.yaml`) to all 3 hosts. Fixed two environment gaps found during setup: (1) the AMI's `pdns` apt repo has an expired GPG signing key, breaking `apt-get update` for the `general` role's `graphviz`/`netdata` install tasks — removed `/etc/apt/sources.list.d/pdns.list` on all 3 hosts (pdns itself is already installed from the AMI, not via apt, so this is safe); (2) MySQL's slow query log was off by default and `/var/log/mysql/` didn't exist, which silently broke pprotein slowlog collection (`failed to open: ... no such file or directory`) — enabled `slow_query_log=1`/`long_query_time=0` and created the log directory on both `s1` and `s2`.
+- Git repo: `git@github.com:itohdak/isucon13_practice_3.git`, initial commit `c2b3fd9`, then `d5bd00d` (adds pprotein pprof integration + initialize collect hook, and fixes a `.gitignore` bug — see below). Both pushed successfully.
+- **Found and fixed a `.gitignore` bug that silently dropped the entire Go application source from the first commit**: a bare `go/` line (copied from the isucon14_practice `.gitignore`, meant only to exclude `~/go`) is unanchored and matched `webapp/go/` too, so `git add -A` added zero `.go` files with no error or warning from `git status`. Caught by cross-checking `git ls-files webapp/go/` against `find webapp/go -type f` after noticing `git show HEAD:webapp/go/main.go` failed. Fixed by anchoring to `/go/`. Re-add and re-verify file counts explicitly any time a `.gitignore` is reused across ISUCON projects.
+- pprotein collection quirk confirmed: the trigger endpoint is `GET /api/group/collect` (not POST — POST returns 404).
+- Baseline benchmark (2026-09-23, commit `d5bd00d`): `pass=true`, `score=3371`. Command: `sudo -u isucon /home/isucon/bench run --target https://pipe.u.isucon.local --nameserver 192.168.0.11 --webapp 192.168.0.11 --enable-ssl` from `s3`.
+- Next: begin the AGENTS.md sub-agent improvement loop, targeting ~10 iterations per the user's instruction, no per-iteration check-in required.
+
+## Current Status — ISUCON14 (ISURIDE) — paused
 
 - **Environment recreated on 2026-09-23 after a cost-savings teardown, with roles swapped for clarity**: `s1`+`s2` are now the load-targeted hosts (app, db) and `s3` is the dedicated bench/pprotein host (previously `s1`+`s3` load-targeted / `s2` bench). New public IPs: `s1`=`52.69.150.66`, `s2`=`54.95.127.250`, `s3`=`35.73.191.95` (private IPs unchanged: `.11`/`.12`/`.13`). Verified fully working end-to-end post-recreation: `pass=true`, score `12676`, matching the pre-teardown range. See `reports/iterations/` for the recreation iteration and `docs/environment-teardown-restore.md` for what teardown/restore involved. **If any IP below looks stale, `config/isucon14.yaml` is the source of truth.**
 - Last updated: 2026-09-23

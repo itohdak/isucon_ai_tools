@@ -1,0 +1,184 @@
+environment: isucon13
+app: isupipe (ISUCON13 livestreaming app)
+aws:
+  profile: isucon15.prep
+  region: ap-northeast-1
+  stack_name: isucon13
+ssh:
+  user: isucon
+  private_key_path: /home/itohdak/.ssh/isucon.pem
+hosts:
+  # Role mapping as of the 2026-09-23 environment creation: s1+s2 are the two
+  # load-targeted competition servers (kept infra-symmetric per standing user
+  # preference: same AMI, same netdata install method, same pprotein-agent
+  # setup), s3 is the dedicated bench/pprotein host. At baseline, only s1
+  # actually serves app traffic (app+db+pdns collocated, matching stock
+  # ISUCON single-host start); s2 is provisioned identically but idle,
+  # kept as a candidate for a future evidence-based split (see
+  # AGENTS.md's Resource And Split Policy -- never split without
+  # benchmark-time resource evidence, and never scale up instance type/size).
+  app:
+    name: isucon13-1
+    public_ip: 54.95.240.51
+    private_ip: 192.168.0.11
+    app_path: /home/isucon/webapp
+    instance_id: i-0b8f3963983b3b94f
+    role: app + db + pdns (baseline single-host)
+  spare:
+    name: isucon13-2
+    public_ip: 13.192.67.176
+    private_ip: 192.168.0.12
+    instance_id: i-0b8a4526a023d259f
+    role: provisioned identically to s1 (netdata kickstart, pprotein-agent) but idle at baseline; app-role services (isupipe-go, mysql, pdns, nginx) left running but unused until a resource-evidence-based split is decided
+  bench:
+    name: isucon13-3
+    public_ip: 35.73.166.230
+    private_ip: 192.168.0.13
+    bench_binary: /home/isucon/bench
+    instance_id: i-062c9613e34065310
+    role: bench + pprotein host; app-role services (isupipe-go, mysql, pdns, nginx) stopped and disabled here
+benchmark:
+  working_directory: /home/isucon
+  command:
+    - sudo
+    - -u
+    - isucon
+    - /home/isucon/bench
+    - run
+    - --target
+    - https://pipe.u.isucon.local:443
+    - --nameserver
+    - "192.168.0.11"
+    - --webapp
+    - "192.168.0.11"
+    - --enable-ssl
+  target_url: https://pipe.u.isucon.local
+  nameserver: 192.168.0.11
+  dns_port: 53
+  notes:
+    - This is a self-managed practice environment (not the ISUCON13 portal), built from the team's own saved CloudFormation template. The portal-specific envcheck / aws-env-isucon-subdomain-address services are therefore not registered (envcheck reports "チェッカーの設定ファイルが読み込めませんでした"), which is expected and not a fault.
+    - The app's local practice domain is u.isucon.local (self-signed cert in /etc/nginx/tls), not the real contest's u.isucon.dev.
+    - PowerDNS on s1 must have ISUCON13_POWERDNS_SUBDOMAIN_ADDRESS in /home/isucon/env.sh set to s1's own private IP (192.168.0.11), then `bash /home/isucon/webapp/pdns/init_zone.sh` re-run, so that pipe.u.isucon.local and *.u.isucon.local resolve to s1 when queried via --nameserver 192.168.0.11 from s3.
+  baseline_score: null
+mysql:
+  host: 127.0.0.1 (on s1, collocated with app at baseline)
+  port: 3306
+  database: isupipe
+  access_method: "sudo mysql isupipe on the app host"
+  second_database: isudns (PowerDNS zone backend, also MySQL-backed on the same host)
+git:
+  template_repository: https://github.com/itohdak/isucon_template (not used directly; app source came pre-installed on the ISUCON13 AMI at /home/isucon)
+  remote_origin: git@github.com:itohdak/isucon13_practice_3.git
+  remote_status: "pushed (initial state on main). Note: the operator sandbox's auto-mode classifier intermittently flags `git push` over SSH as Credential Leakage / Data Exfiltration and blocks the call -- this was transient (retry succeeded) but may recur; if a push is denied, just retry it once or twice before escalating to the user."
+  app_repo_path: /home/isucon
+  app_source_path: /home/isucon/webapp
+  config_capture_path: /home/isucon/common
+  per_server_config_paths:
+    s1: /home/isucon/s1
+    s2: /home/isucon/s2
+    s3: /home/isucon/s3
+  initial_commit_message: initial state
+  branch: main
+  iteration_policy:
+    - keep git status clean before each hypothesis
+    - make one logical change per benchmark
+    - commit only improved and valid changes
+    - restore or revert regressed changes
+  never_commit:
+    - raw secrets from /home/isucon/env.sh (env.sh itself holds no password in this app -- see common/env/env.sh.redacted -- but is still gitignored per policy)
+    - private keys (*.pem, *.key)
+    - TLS certs (*.crt) -- not needed since the AMI's tls files are never modified by deploy.sh
+    - large generated logs
+    - build caches
+logs:
+  observability_enabled: true
+  app_journal_units:
+    - isupipe-go.service
+  nginx_access_log: /var/log/nginx/access.log
+  nginx_access_log_format: default combined (not yet switched to LTSV; consider switching if alp needs richer fields)
+  mysql_error_log: /var/log/mysql/error.log
+  mysql_slow_log: /var/log/mysql/mysql-slow.log
+  mysql_slow_log_expected:
+    slow_query_log: true
+    long_query_time: 0.0
+api_aggregation:
+  tool: alp or pprotein
+  matching_groups_file: isucon_ansible/roles/pprotein/files/alp.yaml
+  matching_groups:
+    - ^/api/tag$
+    - ^/api/user/[^/]+/theme$
+    - ^/api/livestream/reservation$
+    - ^/api/livestream/search$
+    - ^/api/livestream$
+    - ^/api/user/[^/]+/livestream$
+    - ^/api/livestream/[^/]+$
+    - ^/api/livestream/[^/]+/livecomment$
+    - ^/api/livestream/[^/]+/reaction$
+    - ^/api/livestream/[^/]+/report$
+    - ^/api/livestream/[^/]+/ngwords$
+    - ^/api/livestream/[^/]+/livecomment/[^/]+/report$
+    - ^/api/livestream/[^/]+/moderate$
+    - ^/api/livestream/[^/]+/enter$
+    - ^/api/livestream/[^/]+/exit$
+    - ^/api/register$
+    - ^/api/login$
+    - ^/api/user/me$
+    - ^/api/user/[^/]+$
+    - ^/api/user/[^/]+/statistics$
+    - ^/api/user/[^/]+/icon$
+    - ^/api/icon$
+    - ^/api/livestream/[^/]+/statistics$
+    - ^/api/payment$
+    - ^/api/initialize$
+pprotein:
+  enabled: true
+  host: s3
+  public_ip: 35.73.166.230
+  private_ip: 192.168.0.13
+  base_url: http://127.0.0.1:9000
+  dashboard_url: http://127.0.0.1:9000/#/group/
+  targets_file: /home/isucon/data/targets.json
+  ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 9000:127.0.0.1:9000 isucon@35.73.166.230
+  collection:
+    mode: initialize_hook
+    collect_endpoint: /api/group/collect
+    http_method: GET
+    trigger_options:
+      - manual
+      - agent
+      - initialize_hook
+  notes:
+    - "The correct trigger call is a plain GET to /api/group/collect (e.g. `curl http://127.0.0.1:9000/api/group/collect`), NOT POST -- POST returns 404. Verified 2026-09-23."
+    - collectPprotein() is wired into webapp/go/main.go's initializeHandler, calling PPROTEIN_COLLECT_URL (default http://s3:9000/api/group/collect) asynchronously and best-effort, matching the isucon14_practice pattern.
+    - go standalone.Integrate(":8888") added to main() for pprof; added github.com/kaz/pprotein dependency via `go get` + `go mod tidy` (also bumped go toolchain to 1.23.3 and a few transitive deps -- go-sql-driver/mysql 1.7.1->1.8.1, echo 4.11.1->4.12.0 -- as an unavoidable side effect of adding the pprotein dependency).
+netdata:
+  enabled: true
+  parent:
+    host: s3
+    private_ip: 192.168.0.13
+    port: 19999
+  ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 19999:127.0.0.1:19999 isucon@35.73.166.230
+  hosts:
+    app: s1
+    spare: s2
+    bench: s3
+services:
+  app:
+    - isupipe-go.service
+    - mysql.service
+    - pdns.service
+    - nginx.service
+deploy:
+  command: cd /home/isucon/common && sudo -u isucon env HOSTNAME=s1 bash ./deploy.sh
+  notes:
+    - "deploy.sh follows the isucon14_practice pattern: copies common/etc/* (with s1/etc/* overrides taking priority), builds webapp/go/isupipe, re-applies the PowerDNS zone (bash /home/isucon/webapp/pdns/init_zone.sh), then restarts mysql, nginx, pdns, and isupipe-go.service."
+    - "Per the isucon14 session's discovered gotcha, $HOSTNAME resolves to the machine's actual hostname (e.g. ip-192-168-0-11), not s1/s2/s3 -- always invoke as `env HOSTNAME=s1 bash ./deploy.sh` (substituting the right logical name) so any future per-server override directory actually matches."
+  health_services:
+    - isupipe-go.service
+    - mysql.service
+    - pdns.service
+    - nginx.service
+notes:
+  - This is a from-scratch ISUCON13 (ISUPipe) practice environment, distinct from the ongoing ISUCON14 (ISURIDE) project recorded elsewhere in this repo's MILESTONES.md -- do not mix up route lists, service names (isuride-* vs isupipe-*), or schema between the two.
+  - Only /home/itohdak/Downloads/isupipe.md and /home/itohdak/Downloads/cautionary_note.md are authoritative ISUCON13 references; general internet search for ISUCON13 contest info is disallowed per user instruction.
+  - Do not store database passwords or AWS secrets in this file.
