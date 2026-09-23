@@ -242,11 +242,12 @@ Ask the human before:
 - Changing notification semantics.
 - Changing `/api/initialize`.
 - Changing deploy scripts.
-- Splitting web/app/db roles across instances.
 - Adding background workers.
 - Deleting data or resetting git state.
 - Running destructive commands.
 - Exposing pprotein or internal services publicly.
+
+**Splitting web/app/db roles across instances no longer requires asking first** (standing authorization from the user, given 2026-09-23, in response to being asked about the split flagged as a next candidate at the end of the first ISUCON13 tuning session): once the Resource Monitor Agent has produced real benchmark-time evidence of a resource bottleneck the split is expected to relieve (per the Resource And Split Policy above — same instance type/size as already provisioned, never a scale-up), Codex may execute the split directly, same as any other evidence-backed change in the routine-work list above. This is narrower than it sounds: it authorizes *executing* an evidence-based split without a pause, it does not relax the evidence bar itself (still needs the Resource Monitor Agent's data first, not just a hunch) and it does not touch the absolute, never-relaxable no-scale-up rule.
 
 ## Skill And MCP Mapping
 
