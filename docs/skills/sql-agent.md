@@ -34,6 +34,16 @@ Hot-path queries are annotated with `/* api:<handler> */` or `/* api:<handler> f
 
 The correct pattern (already used for `chairs.total_distance`): add the new column via `ALTER TABLE` inside the inline SQL block at the **end** of `webapp/sql/init.sh`, *after* the `3-initial-data.sql.gz` load, and backfill it there if historical data supports it (e.g. from `chair_locations` history) in the same `UPDATE`. Never add a new column straight to a `CREATE TABLE` in `1-schema.sql` without checking whether `3-initial-data.sql.gz` has a positional `INSERT` for that table.
 
+## ISUCON13 (ISUPipe) Environment Note: `slow_query_log` Overhead Is Real On This Host
+
+On the ISUCON13 practice environment (`s1` = app+DB combined, only 2 vCPUs, confirmed CPU-saturated during benchmark runs), leaving `slow_query_log=1`/`long_query_time=0` enabled during a **scored** benchmark run cost ~20-25% of the score in an isolated A/B test (8707 vs 10676-11356 on an otherwise-identical config) — logging every single query has a real CPU/IO cost on a constrained host, not just a disk-space cost. Also beware: `common/etc/mysql/mysql.conf.d/mysqld.cnf` is git-tracked and gets copied over the live config (then `mysqld` is restarted) on every `deploy.sh` run — a live-only `SET GLOBAL`/`sed` fix to enable slow-query logging will silently revert on the next deploy unless the tracked file itself is also updated.
+
+Protocol: only enable slow-query logging transiently, immediately before a dedicated analysis-only benchmark run (`SET GLOBAL slow_query_log = 1; SET GLOBAL long_query_time = 0;` — this is a live, non-persistent change and is fine to leave un-committed), collect the log, then disable it again (`SET GLOBAL slow_query_log = 0;`) before the next benchmark run whose score is meant to count. Do not persist `slow_query_log=1` in the tracked `mysqld.cnf` for this project.
+
+## ISUCON13 (ISUPipe) Environment Note: Don't "Fix" PowerDNS Speed Without Re-Checking The Benchmark's Adaptive Load
+
+Adding a missing index to PowerDNS's own `isudns.records` table (`name`/`type` — a full-table-scan on every DNS lookup) was tested and produced a clear, reproducible **regression** (avg ~8700-10200 vs ~11000-12200 without it), traced via the benchmark's own `result.json` fields: with the index applied, `DNSAttacker並列数` (an internal adaptive DNS-attack concurrency counter) rose from 2 to 3 and successful DNS resolutions roughly tripled — the benchmark appears to escalate adversarial DNS load once it observes the DNS server coping well, and that extra load competes for the same CPU-constrained host's cycles as the app/mysqld, hurting the app traffic that actually drives score more than the DNS fix itself helps. Don't re-attempt this without first checking whether `DNSAttacker並列数` is bounded/capped in a way that would prevent this escalation.
+
 ## Do Not Suggest
 
 - Re-adding an in-process (Go-side) cache for auth/lookup data — tried twice this session (access-token cache, and separately a `FOR SHARE` lock removal that turned out to cost, not save, performance under A/B testing) and rejected both times. If you think an app-level cache would help, flag it as a hypothesis for Codex to A/B test carefully, not a confident recommendation.
