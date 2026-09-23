@@ -10,7 +10,7 @@ Netdata's parent lives on the bench/pprotein host (`s3`) and receives streamed m
 ssh -i <key> ubuntu@<s3-public-ip> "curl -s 'http://127.0.0.1:19999/host/<hostname>/api/v1/data?chart=<chart>&after=<unix>&before=<unix>&format=json&points=10'"
 ```
 
-- `<hostname>` is the short name (`s1`, `s2`, `s3`, ...) — confirm which hosts are actually mirrored with `curl http://127.0.0.1:19999/api/v1/info` (look at `mirrored_hosts`). A host that isn't listed has no Netdata data at all — check whether it's even in the ansible inventory and whether the `general` role has been run against it (see `docs/isucon-startup-checklist.md` and the DB-split history in `MILESTONES.md` for the `[db]` group precedent).
+- `<hostname>` is the short name (`s1`, `s2`, `s3`, ...) — confirm which hosts are actually mirrored with `curl http://127.0.0.1:19999/api/v1/info` (look at `mirrored_hosts`). A host that isn't listed has no Netdata data at all — check whether it's even in the ansible inventory and whether the `general` role has been run against it (see `docs/isucon-startup-checklist.md` and the DB-split history in `reports/summary/isucon14.md` for the `[db]` group precedent).
 - Discover real chart names per host with `curl http://127.0.0.1:19999/host/<hostname>/api/v1/charts` rather than assuming — they can differ (e.g. `disk_util.nvme0n1`, device-name-dependent).
 - Common charts: `system.cpu` (fields: user/system/iowait/softirq/...; idle = 100 minus the sum of the others), `system.load` (load1/load5/load15), `system.ram`, `disk_util.<device>`.
 

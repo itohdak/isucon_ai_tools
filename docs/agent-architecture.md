@@ -138,7 +138,7 @@ Iteration reports should record which of these agents were used and what they co
 | Netdata parent (pprotein host `s3`) | Receives streamed metrics from every instance; single place to query per-host CPU/load/memory/disk. Not exposed publicly; use SSH tunnel to `localhost:19999`. |
 | GitHub repo | Shared source, deploy state, docs, reports, and decision history. |
 
-(Role mapping current as of the 2026-09-23 environment recreation, which swapped `s2`/`s3` from an earlier `s1`+`s3` load-targeted / `s2` bench arrangement — see `MILESTONES.md` and `docs/environment-teardown-restore.md`. Check `config/isucon14.yaml` if this looks out of date.)
+(Role mapping current as of the 2026-09-23 environment recreation, which swapped `s2`/`s3` from an earlier `s1`+`s3` load-targeted / `s2` bench arrangement — see `reports/summary/isucon14.md` and `docs/environment-teardown-restore.md`. Check `config/isucon14.yaml` if this looks out of date.)
 
 ## Benchmark Collection Policy
 

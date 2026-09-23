@@ -106,7 +106,7 @@ If Codex verifies directly, record that in `Agents Used`.
 A Recorder Agent (delegated or Codex acting directly) should read `docs/skills/recorder-agent.md` first — in particular, nothing is read automatically by a future session, so records must stand alone. After every benchmark-backed change, Recorder Agent or Codex must update:
 
 - an iteration report under `reports/iterations/`
-- `MILESTONES.md` when the overall status changes
+- `reports/summary/<contest>.md` (e.g. `reports/summary/isucon13.md`) when the overall status changes — see "Per-Contest Summary Reports" below
 - `docs/agent-architecture.md` or this file when the agent process changes
 
 ### Allowed Reasons To Skip Sub-Agents
@@ -200,8 +200,16 @@ Minimum `Agents used` format:
 | SQL Agent | yes | Confirmed latest-status lookup dominates slowlog total time. |
 | Implementer Agent | no | Codex implemented directly because the patch was small and coupled. |
 | Verifier Agent | yes | Benchmark passed and pprotein artifacts were recorded. |
-| Recorder Agent | yes | Wrote this report and updated milestones. |
+| Recorder Agent | yes | Wrote this report and updated the summary. |
 ```
+
+## Per-Contest Summary Reports
+
+There is one running summary file per contest/project at `reports/summary/<contest>.md` (e.g. `reports/summary/isucon13.md`, `reports/summary/isucon14.md`) — a chronological, append-only narrative log of overall status: accepted/rejected iterations with their score deltas, environment changes, and user-directed policy changes. It is the "read this first" entry point for a session resuming work on that contest, before diving into the much more detailed per-change evidence under `reports/iterations/` and `reports/history/`. Full current environment facts still live in `config/<contest>.yaml` and this file's "Current Environment Notes" sections — the summary file is a log, not a source of truth for current state.
+
+Update the relevant `reports/summary/<contest>.md` (never both — write to the contest actually being worked on) as part of the Recorder role, alongside every iteration report, and also for non-benchmark-backed events worth a human knowing about later (an environment recreation, a user correction, an incident like a broken observability pipeline). Append new entries at the end; do not rewrite or delete earlier entries, and do not edit another contest's summary file when working on a different one.
+
+This replaces the older `MILESTONES.md` convention. That file mixed two things — build-out tracking for an earlier, now-archived Python MCP/orchestrator tooling layer (see `archive/NOTE.md`) that has nothing to do with actual ISUCON tuning, and a later, informally-added running-status narrative that overlapped with `reports/iterations/`/`reports/history/`. The user pointed this out on 2026-09-23 and asked for it to be retired: `MILESTONES.md` was moved to `archive/MILESTONES.md` (frozen, not updated further) and its narrative-summary role was split out per-contest into `reports/summary/<contest>.md` as described above. Do not create or update a top-level `MILESTONES.md` again.
 
 ## Ownership Rules
 
@@ -219,7 +227,7 @@ Suggested ownership boundaries:
 - SQL schema or seed changes: `webapp/sql/*`
 - Deployment/runtime changes: `common/`, `s1/`, `s2/`, `s3/`, systemd/nginx/mysql config copies
 - Tooling changes: `isucon_ai_tools/isucon_ai_tools/**`
-- Documentation/report changes: `docs/`, `reports/`, `MILESTONES.md`, `AGENTS.md`
+- Documentation/report changes: `docs/`, `reports/` (including `reports/summary/<contest>.md`), `AGENTS.md`
 
 ## Safety Boundaries
 

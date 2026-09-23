@@ -7,7 +7,7 @@ This records exactly how the `isucon14` AWS environment was torn down for cost s
 ## State At Teardown (for reference)
 
 - App commit deployed: `1099e7b` (`git@github.com:itohdak/isucon14_practice.git`, `main` branch).
-- Last verified benchmark: `pass=true`, score in the 10000-13000 range (see `MILESTONES.md` and `reports/iterations/iteration-20260923-023402.md` for the exact last-recorded numbers).
+- Last verified benchmark: `pass=true`, score in the 10000-13000 range (see `reports/summary/isucon14.md` and `reports/iterations/iteration-20260923-023402.md` for the exact last-recorded numbers).
 - Topology: `s1` (app, private `192.168.0.11`) + `s2` (bench/pprotein, private `192.168.0.12`) + `s3` (dedicated MySQL, private `192.168.0.13`, `maxMatchesPerCall=3`).
 - `s1` runs no local MySQL (stopped/disabled; `deploy.sh` restarts it anyway on every deploy, so stop it again after redeploying — see `docs/skills/implementer-agent.md`).
 - CloudFormation stack `isucon14` (region `ap-northeast-1`, profile `isucon15.prep`) had `Instance1`/`Instance2`/`Instance3` + `InstanceIP1`/`InstanceIP2`/`InstanceIP3` all present — the exact deployed template is saved at `isucon_cf_provisioning/isucon14/cf-template-isucon14.yaml` (committed locally; push to GitHub failed for lack of stored credentials on the operator machine, but the commit is safe on local disk at `/home/itohdak/isucon/isucon_cf_provisioning`, which is not part of the AWS infrastructure being torn down).
@@ -59,7 +59,7 @@ This records exactly how the `isucon14` AWS environment was torn down for cost s
 7. **Set up MySQL on `s3`** (the DB host):
    - Copy `s3/etc/mysql/mysql.conf.d/mysqld.cnf` from the `isucon14_practice` repo into place on `s3` (`/etc/mysql/mysql.conf.d/mysqld.cnf`), then `sudo systemctl restart mysql`.
    - Run `webapp/sql/0-init.sql` once manually on `s3` (`sudo mysql < 0-init.sql`) to create the `isuride` database and the remote-capable `isucon`@`%` user — this is not part of the recurring `/api/initialize` flow, see `docs/skills/sql-agent.md`.
-   - Stop and disable the app-role services on `s3` (`isuride-go`, `isuride-matcher`, `isuride-payment_mock`, `nginx`) since it's DB-only, per `MILESTONES.md`'s DB-split notes.
+   - Stop and disable the app-role services on `s3` (`isuride-go`, `isuride-matcher`, `isuride-payment_mock`, `nginx`) since it's DB-only, per `reports/summary/isucon14.md`'s DB-split notes.
 8. **Set `/home/isucon/env.sh` on `s1`**: `ISUCON_DB_HOST="192.168.0.13"` (the private IP is unchanged, so this value doesn't need to change from what's in `common/env/env.sh.redacted`, just make sure the real `env.sh` — which is gitignored — is actually created on the fresh host with this value; see `common/env/env.sh.redacted` for the full expected contents).
 9. **Deploy the app to `s1`**:
    ```bash
