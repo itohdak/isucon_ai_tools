@@ -132,6 +132,8 @@ Every benchmark-backed iteration must include one of these statements:
 
 **Benchmark runs are a limited resource in a real contest, not a free/automated loop.** The multi-run verification guidance throughout this file and `docs/skills/verifier-agent.md` (2-3 runs for routine changes, 5+ for risky ones, A/B redeploys to check noise) assumes this *practice* environment's automated, freely-repeatable `./bench run` command. A real ISUCON contest benchmark is normally triggered manually through a portal website and is commonly rate-limited or capped in total attempts — do not assume that budget is available. See `docs/skills/verifier-agent.md`'s "Contest-Mode Adjustment" section for how to adapt (build confidence before spending a run, accept fewer runs per hypothesis, be more conservative in change design rather than relying on repeated runs to catch mistakes).
 
+Before every benchmark run, commit the exact application/config state being measured. pprotein records the final commit for the run, so benchmarking uncommitted changes makes the shared report misleading. If the change has a meaningful rollback risk or is still exploratory, create a feature branch and commit there before deploying and running bench. Do not run bench against an uncommitted worktree unless the user explicitly overrides this rule for an emergency check, and record the exception in the iteration report.
+
 Performance decisions should cite evidence in this order:
 
 1. Benchmark pass/fail and categorized errors.
