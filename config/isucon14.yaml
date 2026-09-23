@@ -7,24 +7,32 @@ ssh:
   user: ubuntu
   private_key_path: /home/itohdak/Downloads/isucon.pem
 hosts:
+  # Role mapping as of the 2026-09-23 recreation: s1+s2 are the load-targeted
+  # hosts (app, db) and s3 is the dedicated bench/pprotein host — swapped
+  # from the original s1+s3 load-targeted / s2 bench arrangement for
+  # clarity. Private IPs per host label are fixed by the CloudFormation
+  # template (s1=.11, s2=.12, s3=.13); only which role runs on .12 vs .13
+  # changed.
   app:
     name: isucon13-1
-    public_ip: 13.230.132.249
+    public_ip: 52.69.150.66
     private_ip: 192.168.0.11
     app_path: /home/isucon/webapp
-  bench:
-    name: isucon14-bench
-    public_ip: 35.78.44.172
-    private_ip: 192.168.0.12
-    bench_binary: /home/isucon/bench
   db:
     name: isucon14-db
-    public_ip: 18.176.6.65
-    private_ip: 192.168.0.13
-    role: dedicated MySQL host (split from app host on 2026-09-23)
-    instance_id: i-09b55e06484e998b7
-    provisioned_via: "CloudFormation stack 'isucon14', logical resources Instance3/InstanceIP3 (previously present in the template but not deployed)"
+    public_ip: 54.95.127.250
+    private_ip: 192.168.0.12
+    role: dedicated MySQL host (split from app host on 2026-09-23; moved from s3 to s2 on the 2026-09-23 environment recreation)
+    instance_id: i-0922fb41fbecbf84b
+    provisioned_via: "CloudFormation stack 'isucon14', logical resources Instance2/InstanceIP2"
     app_services_disabled: [isuride-go.service, isuride-matcher.service, isuride-payment_mock.service, nginx.service]
+  bench:
+    name: isucon14-bench
+    public_ip: 35.73.191.95
+    private_ip: 192.168.0.13
+    bench_binary: /home/isucon/bench
+    instance_id: i-0747e045b4506a3a3
+    role: bench + pprotein host (moved from s2 to s3 on the 2026-09-23 environment recreation)
 benchmark:
   working_directory: /home/isucon
   command:
@@ -40,25 +48,25 @@ benchmark:
     - --payment-bind-port
     - "12346"
     - --payment-url
-    - http://192.168.0.12:12346
+    - http://192.168.0.13:12346
   target_url: https://bench.xiv.isucon.net
   target_addr: 192.168.0.11:443
   payment_bind_port: 12346
-  payment_url: http://192.168.0.12:12346
+  payment_url: http://192.168.0.13:12346
   baseline_score:
     score: 1002
     pass: true
     measured_at: "2026-09-21"
 mysql:
-  host: 192.168.0.13
+  host: 192.168.0.12
   port: 3306
   database: isuride
   version: 8.0.46-0ubuntu0.24.04.3
-  access_method: "sudo mysql on the db host (192.168.0.13); app connects over TCP as user isucon"
+  access_method: "sudo mysql on the db host (192.168.0.12, i.e. s2); app connects over TCP as user isucon"
   split_from_app_host: true
   split_date: "2026-09-23"
-  app_env_sh_setting: 'ISUCON_DB_HOST="192.168.0.13"'
-  bind_address_override: s3/etc/mysql/mysql.conf.d/mysqld.cnf (bind-address 0.0.0.0, restricted at network layer by the security group to 192.168.0.0/24)
+  app_env_sh_setting: 'ISUCON_DB_HOST="192.168.0.12"'
+  bind_address_override: s2/etc/mysql/mysql.conf.d/mysqld.cnf (bind-address 0.0.0.0, restricted at network layer by the security group to 192.168.0.0/24)
   remote_user_setup: "created by webapp/sql/0-init.sql ('isucon'@'%'), run manually once on the db host since it is not part of the recurring /api/initialize -> init.sh flow"
   mcp_verified: true
   current_top_slow_query: SELECT * FROM rides WHERE chair_id IS NULL ORDER BY created_at LIMIT 1
@@ -138,14 +146,14 @@ api_aggregation:
     - ^/api/internal/matching$
 pprotein:
   enabled: true
-  host: s2
-  public_ip: 35.78.44.172
-  private_ip: 192.168.0.12
+  host: s3
+  public_ip: 35.73.191.95
+  private_ip: 192.168.0.13
   base_url: http://127.0.0.1:9000
-  internal_url: http://s2:9000
+  internal_url: http://s3:9000
   dashboard_url: http://127.0.0.1:9000/#/group/
   targets_file: /home/isucon/data/targets.json
-  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@35.78.44.172
+  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 9000:127.0.0.1:9000 ubuntu@35.73.191.95
   collection:
     mode: initialize_hook
     collect_endpoint: /api/group/collect
@@ -162,15 +170,16 @@ pprotein:
 netdata:
   enabled: true
   parent:
-    host: s2
-    private_ip: 192.168.0.12
+    host: s3
+    private_ip: 192.168.0.13
     port: 19999
-    url: http://192.168.0.12:19999
+    url: http://192.168.0.13:19999
   dashboard_url: http://127.0.0.1:19999
-  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 19999:127.0.0.1:19999 ubuntu@35.78.44.172
+  ssh_tunnel: ssh -i /home/itohdak/Downloads/isucon.pem -L 19999:127.0.0.1:19999 ubuntu@35.73.191.95
   hosts:
     app: s1
-    bench: s2
+    db: s2
+    bench: s3
   notes:
     - All instances (webapp + pprotein) stream their metrics to the netdata parent running on the pprotein host; see isucon_ansible/roles/general (stream.conf.parent.j2 / stream.conf.child.j2).
     - Per-host metrics are queried through the parent at http://<parent>:19999/host/<netdata_hostname>/api/v1/... using the hostnames listed in `hosts` above.
