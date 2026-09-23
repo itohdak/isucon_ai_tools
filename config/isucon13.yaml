@@ -59,7 +59,7 @@ benchmark:
     - This is a self-managed practice environment (not the ISUCON13 portal), built from the team's own saved CloudFormation template. The portal-specific envcheck / aws-env-isucon-subdomain-address services are therefore not registered (envcheck reports "チェッカーの設定ファイルが読み込めませんでした"), which is expected and not a fault.
     - The app's local practice domain is u.isucon.local (self-signed cert in /etc/nginx/tls), not the real contest's u.isucon.dev.
     - PowerDNS on s1 must have ISUCON13_POWERDNS_SUBDOMAIN_ADDRESS in /home/isucon/env.sh set to s1's own private IP (192.168.0.11), then `bash /home/isucon/webapp/pdns/init_zone.sh` re-run, so that pipe.u.isucon.local and *.u.isucon.local resolve to s1 when queried via --nameserver 192.168.0.11 from s3.
-  baseline_score: 3371 # original baseline, commit d5bd00d. Latest verified: 11847.3 avg (3-run) at commit a605b23 after iteration 4 (stats N+1 fix + DB connection pool 10->50 combined) -- see reports/iterations/iteration-20260923-224700.md. Iteration 2 (stats handler N+1 fix ALONE, before the pool increase) was tested and REJECTED (regression) -- see iteration-20260923-213407.md -- but the same fix combined with iteration 3's pool increase in iteration 4 was a net win.
+  baseline_score: 3371 # original baseline, commit d5bd00d. Latest verified: 12248.3 avg (3-run) at commit efae626 after iteration 5 (moderateHandler N+1 fix) -- see reports/iterations/iteration-20260923-231000.md. Iteration 2 (stats handler N+1 fix ALONE, before the pool increase) was tested and REJECTED (regression) -- see iteration-20260923-213407.md -- but the same fix combined with iteration 3's pool increase in iteration 4 was a net win.
 mysql:
   host: 127.0.0.1 (on s1, collocated with app at baseline)
   port: 3306
