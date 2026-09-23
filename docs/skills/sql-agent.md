@@ -4,13 +4,13 @@ Analyze query plans and access patterns; suggest low-risk database-side improvem
 
 ## Where MySQL Actually Lives
 
-MySQL runs on the dedicated DB host **`s3`**, not the app host `s1` — it was split out after resource evidence showed the combined host was CPU-bound. (`isucon_ai_tools/isucon_ai_tools/mcp/mysql.py` still hardcodes SSH to `hosts.app`, i.e. `s1` — that tool is stale post-split and will silently read `s1`'s now-unused local slow log instead of erroring. Don't use it; connect to `s3` directly.)
+MySQL runs on the dedicated DB host **`s2`**, not the app host `s1` — it was split out after resource evidence showed the combined host was CPU-bound. (`isucon_ai_tools/isucon_ai_tools/mcp/mysql.py` still hardcodes SSH to `hosts.app`, i.e. `s1` — that tool is stale post-split and will silently read `s1`'s now-unused local slow log instead of erroring. Don't use it; connect to `s2` directly.)
 
 ```bash
-ssh -i <key> ubuntu@<s3-public-ip> "sudo mysql isuride -e '...'"
+ssh -i <key> ubuntu@<s2-public-ip> "sudo mysql isuride -e '...'"
 ```
 
-Slow query log: `/var/log/mysql/mysql-slow.log` on `s3`, `long_query_time=0.0` (logs every query). `slp` is installed on `s3` directly (deployed via the `pprotein` ansible role's `--limit s3` run, alongside `pprotein-agent` so pprotein itself can also collect it).
+Slow query log: `/var/log/mysql/mysql-slow.log` on `s2`, `long_query_time=0.0` (logs every query). `slp` is installed on `s2` directly (deployed via the `pprotein` ansible role's `--limit s2` run, alongside `pprotein-agent` so pprotein itself can also collect it).
 
 ## Required Methodology: Produce The Full Ranking, Not A Narrative Summary
 
@@ -22,7 +22,7 @@ A prior run of this skill reported a narrative "top findings" list that quietly 
    ```
    (Use a large `--limit` — the default errors with "Too many Queries" once distinct shapes exceed it. For a huge log file, `sudo tail -c <bytes> /var/log/mysql/mysql-slow.log > /tmp/recent.log` first to bound the input.)
 2. If you want to flag something outside that top-10-15 for a *different* reason (e.g. unusually high per-call/max latency, or a known correctness-risk area), say so **explicitly and separately** — don't blend it into the same list without distinction.
-3. For each candidate from either list, run `EXPLAIN` (and `EXPLAIN ANALYZE` if it returns quickly) with representative parameter values against the live `s3` database to check index usage (`ref`/`range`/`const` vs `ALL`), rows examined, `Using filesort`/`Using temporary`.
+3. For each candidate from either list, run `EXPLAIN` (and `EXPLAIN ANALYZE` if it returns quickly) with representative parameter values against the live `s2` database to check index usage (`ref`/`range`/`const` vs `ALL`), rows examined, `Using filesort`/`Using temporary`.
 
 ## Attribution Via SQL Comments
 

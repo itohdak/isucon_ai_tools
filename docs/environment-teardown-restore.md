@@ -2,6 +2,8 @@
 
 This records exactly how the `isucon14` AWS environment was torn down for cost savings during a break, and the exact steps to restore it to the state it was in at teardown time.
 
+**Addendum (actual restore, 2026-09-23):** on resuming, the role mapping was changed for clarity: `s1`+`s2` became the load-targeted hosts (app, db) and `s3` became the dedicated bench/pprotein host, instead of recreating the original `s1`+`s3` load-targeted / `s2` bench arrangement described below. The steps below are otherwise accurate (same CloudFormation template, same private IPs), but wherever this doc says "db host = s3" / "bench host = s2", the actual restore put db on `s2` and bench/pprotein on `s3`. See `AGENTS.md`'s Current Environment Notes and `config/isucon14.yaml` for the current, correct mapping — this file is kept as a historical record of the teardown moment, not a live reference.
+
 ## State At Teardown (for reference)
 
 - App commit deployed: `1099e7b` (`git@github.com:itohdak/isucon14_practice.git`, `main` branch).

@@ -11,8 +11,8 @@ When a milestone is completed, update:
 
 ## Current Status
 
-- **⚠️ ENVIRONMENT TORN DOWN FOR COST SAVINGS as of 2026-09-23.** The `isucon14` CloudFormation stack (all 3 EC2 instances, EIPs, VPC) has been deleted. **Before doing any SSH/benchmark/AWS work, read `docs/environment-teardown-restore.md` and restore the stack first** — none of the IPs/hosts in this file are currently live. All code is safely committed/pushed; the exact CloudFormation template needed to recreate the environment identically is saved at `isucon_cf_provisioning/isucon14/cf-template-isucon14.yaml`.
-- Last updated: 2026-09-22
+- **Environment recreated on 2026-09-23 after a cost-savings teardown, with roles swapped for clarity**: `s1`+`s2` are now the load-targeted hosts (app, db) and `s3` is the dedicated bench/pprotein host (previously `s1`+`s3` load-targeted / `s2` bench). New public IPs: `s1`=`52.69.150.66`, `s2`=`54.95.127.250`, `s3`=`35.73.191.95` (private IPs unchanged: `.11`/`.12`/`.13`). Verified fully working end-to-end post-recreation: `pass=true`, score `12676`, matching the pre-teardown range. See `reports/iterations/` for the recreation iteration and `docs/environment-teardown-restore.md` for what teardown/restore involved. **If any IP below looks stale, `config/isucon14.yaml` is the source of truth.**
+- Last updated: 2026-09-23
 - Overall phase: Operational iteration
 - Next milestone: Continue evidence-driven tuning
 - Startup checklist: `docs/isucon-startup-checklist.md`

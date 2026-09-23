@@ -4,10 +4,10 @@ Report per-host CPU/load/memory/disk during a *specific* benchmark window and gi
 
 ## Access Pattern That Actually Works
 
-Netdata's parent lives on the bench/pprotein host (`s2`) and receives streamed metrics from every other host. Query it **from inside `s2` over SSH**, hitting `127.0.0.1:19999` — do not try to reach the private IP (`192.168.0.x:19999`) directly from the operator machine, since that subnet is not routable from outside the VPC. (`isucon_ai_tools/isucon_ai_tools/mcp/netdata.py` does exactly that and times out on every call — verified by actually running it. Don't use it; use the pattern below instead.)
+Netdata's parent lives on the bench/pprotein host (`s3`) and receives streamed metrics from every other host. Query it **from inside `s3` over SSH**, hitting `127.0.0.1:19999` — do not try to reach the private IP (`192.168.0.x:19999`) directly from the operator machine, since that subnet is not routable from outside the VPC. (`isucon_ai_tools/isucon_ai_tools/mcp/netdata.py` does exactly that and times out on every call — verified by actually running it. Don't use it; use the pattern below instead.)
 
 ```bash
-ssh -i <key> ubuntu@<s2-public-ip> "curl -s 'http://127.0.0.1:19999/host/<hostname>/api/v1/data?chart=<chart>&after=<unix>&before=<unix>&format=json&points=10'"
+ssh -i <key> ubuntu@<s3-public-ip> "curl -s 'http://127.0.0.1:19999/host/<hostname>/api/v1/data?chart=<chart>&after=<unix>&before=<unix>&format=json&points=10'"
 ```
 
 - `<hostname>` is the short name (`s1`, `s2`, `s3`, ...) — confirm which hosts are actually mirrored with `curl http://127.0.0.1:19999/api/v1/info` (look at `mirrored_hosts`). A host that isn't listed has no Netdata data at all — check whether it's even in the ansible inventory and whether the `general` role has been run against it (see `docs/isucon-startup-checklist.md` and the DB-split history in `MILESTONES.md` for the `[db]` group precedent).

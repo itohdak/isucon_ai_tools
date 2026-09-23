@@ -131,11 +131,14 @@ Iteration reports should record which of these agents were used and what they co
 
 | System | Role |
 | --- | --- |
-| App host `s1` | Runs ISUCON app, MySQL, Nginx, services, git repo. |
-| Bench host `s2` | Runs official/practice benchmark command. |
-| pprotein host `s2` | Shared dashboard for pprof, httplog, slowlog, and future human/agent collaboration. It is not exposed publicly; use SSH tunnel `localhost:9000`. |
-| Netdata parent (pprotein host `s2`) | Receives streamed metrics from every instance; single place to query per-host CPU/load/memory/disk. Not exposed publicly; use SSH tunnel to `localhost:19999`. |
+| App host `s1` | Runs the ISUCON app, Nginx, and the git repo. No longer runs MySQL (split to `s2`). |
+| DB host `s2` | Dedicated MySQL host, split from `s1` for CPU resource reasons; only `mysql.service` runs here. |
+| Bench host `s3` | Runs the official/practice benchmark command. |
+| pprotein host `s3` | Shared dashboard for pprof, httplog, slowlog, and future human/agent collaboration. It is not exposed publicly; use SSH tunnel `localhost:9000`. |
+| Netdata parent (pprotein host `s3`) | Receives streamed metrics from every instance; single place to query per-host CPU/load/memory/disk. Not exposed publicly; use SSH tunnel to `localhost:19999`. |
 | GitHub repo | Shared source, deploy state, docs, reports, and decision history. |
+
+(Role mapping current as of the 2026-09-23 environment recreation, which swapped `s2`/`s3` from an earlier `s1`+`s3` load-targeted / `s2` bench arrangement — see `MILESTONES.md` and `docs/environment-teardown-restore.md`. Check `config/isucon14.yaml` if this looks out of date.)
 
 ## Benchmark Collection Policy
 
