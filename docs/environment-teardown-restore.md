@@ -74,6 +74,8 @@ This records exactly how the `isucon14` AWS environment was torn down for cost s
     ```
     Then run a benchmark from `s2` (see `config/isucon14.yaml`'s `benchmark.command`) and confirm `pass=true` with a score in the previously-observed range before resuming tuning work.
 
+**Known gap found on 2026-09-23 (post-restore, during later tuning work):** step 9's `deploy.sh` only builds the main `isuride` Go binary — it never builds `payment_mock`, even though `isuride-payment_mock.service`'s `ExecStart` points at a compiled `payment_mock` binary under `webapp/payment_mock/`. On the freshly-recreated `s1`, that binary didn't exist (`code=203/EXEC` on service start), and had apparently been built manually and untracked in some earlier session. Add this as an explicit step after 9: `sudo -u isucon bash -c 'cd /home/isucon/webapp/payment_mock && /home/isucon/local/golang/bin/go build -o payment_mock .'`, then restart `isuride-payment_mock.service`.
+
 ## Cost Note
 
 Deleting the stack removes the 3 EC2 instances, their EBS volumes (all have `DeleteOnTermination: true`), the 3 Elastic IPs, and the VPC/networking resources — all stack-owned resources, so nothing should be left behind to keep incurring cost. Verify with `aws cloudformation describe-stacks --stack-name isucon14` returning "does not exist" and `aws ec2 describe-instances` showing no `isucon14`-tagged instances in a non-terminated state after deletion completes.
