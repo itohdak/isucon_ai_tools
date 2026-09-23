@@ -183,6 +183,7 @@ netdata:
   notes:
     - All instances (webapp + pprotein) stream their metrics to the netdata parent running on the pprotein host; see isucon_ansible/roles/general (stream.conf.parent.j2 / stream.conf.child.j2).
     - Per-host metrics are queried through the parent at http://<parent>:19999/host/<netdata_hostname>/api/v1/... using the hostnames listed in `hosts` above.
+    - The db host runs netdata installed via the official kickstart script (not the Ubuntu apt package, which lacks go.d.plugin), giving it MySQL-level metrics (`mysql_local.*` charts) in addition to OS metrics. webapp/pprotein hosts remain on the apt package (OS metrics only). See docs/skills/resource-monitor-agent.md for chart names and query pattern; managed by isucon_ansible's general role, scoped to the `db` inventory group.
 services:
   app:
     - isuride-go.service

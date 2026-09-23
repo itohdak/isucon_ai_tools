@@ -42,6 +42,16 @@ scp -i <key> ubuntu@<host-public-ip>:/tmp/pidstat.log <local-path>
 
 Then aggregate `%CPU` per `Command` across samples (sum and average) — this is what conclusively identified `mysqld` at ~97.7% avg CPU on the pre-split combined host, and later `mysqld` at ~141-180% on the dedicated DB host.
 
+## MySQL-Level Metrics (db host only, since 2026-09-23)
+
+The `db`-group host (`s2` as of the current role mapping) runs netdata installed via the **official kickstart installer**, not the Ubuntu apt package — the apt package (`netdata-core`/`-plugins-bash`/`-plugins-python`) has no `go.d.plugin` at all, so it cannot collect MySQL metrics; only OS-level metrics were visible before this. This matters because a real regression was once invisible until an ad-hoc SSH `SHOW STATUS` check found it (`Max_used_connections` had hit MySQL's stock `max_connections=151` ceiling, causing a failed benchmark run) — with this collector, the same signal is now visible as a live/historical chart instead of needing a reactive one-off check.
+
+- Chart family: `mysql_local.*` (43 charts as of setup), e.g. `mysql_local.connections`, `mysql_local.connections_active`, `mysql_local.innodb_buffer_pool_bytes`, `mysql_local.innodb_io`, `mysql_local.innodb_cur_row_lock`, `mysql_local.handlers`, `mysql_local.net`. List them all with the same `.../api/v1/charts` pattern above, filtering for names starting with `mysql`.
+- Query the same way as any other chart, through the `s3` parent: `curl 'http://127.0.0.1:19999/host/s2/api/v1/data?chart=mysql_local.connections&after=<unix>&before=<unix>&points=10'`.
+- Collector config: `/etc/netdata/go.d/mysql.conf` on the db host, connecting as a minimal-privilege `netdata`@`localhost` user (`PROCESS, REPLICATION CLIENT` only, no password, unix socket at `/var/run/mysqld/mysqld.sock`). Managed by `isucon_ansible`'s `general` role (`roles/general/tasks/main.yaml`), which installs netdata differently for `db`-group hosts specifically — re-running `ansible-playbook playbooks/deploy_general.yaml --limit <db-host>` after any environment recreation reproduces this (verified idempotent).
+- **This only applies to whichever host is currently in the `db` inventory group.** If DB moves hosts again (per this project's history of role swaps), re-run the `general` role against the new db host to get the same collector there; the old db host keeps whatever install it had unless the role is re-run there too.
+- Other hosts (`webapp`, `pprotein`) are still on the plain apt-packaged netdata (OS metrics only) — this was scoped to DB metrics specifically per the original ask, not a blanket upgrade.
+
 ## Output Contract
 
 Per host: CPU idle avg/min/max, load1 avg/max, memory %, disk util if relevant, and an explicit verdict (CPU-bound / memory-bound / disk-bound / not resource-bound). State the exact time window used.
