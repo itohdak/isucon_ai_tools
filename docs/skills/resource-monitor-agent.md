@@ -31,7 +31,16 @@ For a true "is it saturated right now" spot-check instead of a historical window
 
 ## Per-Process Breakdown
 
-Netdata's `apps.plugin` charts weren't configured with process groups in this environment (`apps.*`/`groups.*` charts don't exist per-host here — checked via the charts endpoint). For "which process is actually consuming the CPU," use `pidstat` directly instead:
+**Update (2026-09-23): per-process CPU is now available directly in netdata**, superseding the `pidstat` workaround below for the processes it covers. The earlier claim that `apps.*` charts "don't exist per-host here" was wrong for what it actually meant: `apps.plugin` was running all along (322 `app.*` charts existed on `s1`), but `isuride` and `payment_mock` didn't match any pattern in netdata's stock `apps_groups.conf`, so they were silently lumped into a generic `other` group alongside everything else unclassified — indistinguishable from each other or from unrelated system noise.
+
+Custom group entries (`isuride`, `isuride-payment_mock`, `nginx`) were added on webapp-group hosts (`s1` as of the current role mapping) via `isucon_ansible`'s `general` role, concatenated ahead of a fresh copy of netdata's stock `apps_groups.conf` (that file, if present under `/etc/netdata/`, fully *replaces* the stock one rather than merging with it — there's no include mechanism, which is why an early attempt at this that just wrote a 3-line file wiped out ~20 useful stock groups like `auth`/`cron`/`sql` until fixed to concatenate instead of replace).
+
+- Chart family: `app.<group>_cpu_utilization` (also `_mem_usage`, `_disk_physical_io`, `_threads`, etc.) for groups `isuride`, `isuride-payment_mock`, `nginx`, plus the ~20 stock groups (`sql` covers `mysqld*` — this is what made `app.mysqld_cpu_utilization` appear automatically on the db host without any custom config).
+- Query the same way as any other chart: `curl 'http://127.0.0.1:19999/host/<hostname>/api/v1/data?chart=app.isuride_cpu_utilization&after=<unix>&before=<unix>&points=10'` (`user`+`system` fields, in %; sum them for total CPU%).
+- **Known gap**: `isuride-matcher.service`'s shell loop (`sh -c "while true; do curl ...; sleep ...; done"`) is not usefully groupable this way — its actual cost is in the very short-lived `curl` child processes it spawns every tick, which apps.plugin's periodic sampling is unlikely to attribute reliably. Use `pidstat` (below) if the matcher loop's own overhead specifically needs measuring.
+- Re-running `ansible-playbook playbooks/deploy_general.yaml --limit <webapp-host>` after any environment recreation reproduces this (verified idempotent). Only applies to whichever host(s) are currently in the `webapp` inventory group — re-run against a new host if roles are swapped again.
+
+For anything not covered by a netdata process group (the matcher loop above, or any other short-lived/unclassified process), fall back to `pidstat` directly:
 
 ```bash
 ssh -i <key> ubuntu@<host-public-ip> "nohup pidstat -u 1 <seconds> > /tmp/pidstat.log 2>&1 & echo started"
