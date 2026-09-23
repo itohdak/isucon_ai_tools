@@ -59,7 +59,7 @@ benchmark:
     - This is a self-managed practice environment (not the ISUCON13 portal), built from the team's own saved CloudFormation template. The portal-specific envcheck / aws-env-isucon-subdomain-address services are therefore not registered (envcheck reports "チェッカーの設定ファイルが読み込めませんでした"), which is expected and not a fault.
     - The app's local practice domain is u.isucon.local (self-signed cert in /etc/nginx/tls), not the real contest's u.isucon.dev.
     - PowerDNS on s1 must have ISUCON13_POWERDNS_SUBDOMAIN_ADDRESS in /home/isucon/env.sh set to s1's own private IP (192.168.0.11), then `bash /home/isucon/webapp/pdns/init_zone.sh` re-run, so that pipe.u.isucon.local and *.u.isucon.local resolve to s1 when queried via --nameserver 192.168.0.11 from s3.
-  baseline_score: 3371 # original baseline, commit d5bd00d. Latest verified: 7492.7 avg (3-run) at commit b036a4f after iteration 1 (missing FK-lookup indexes) -- see reports/iterations/iteration-20260923-211905.md
+  baseline_score: 3371 # original baseline, commit d5bd00d. Latest verified: 10748.3 avg (3-run) at commit 56f73b3 after iteration 3 (DB connection pool 10->50) -- see reports/iterations/iteration-20260923-214145.md. Iteration 2 (stats handler N+1 fix) was tested and REJECTED (regression), see iteration-20260923-213407.md.
 mysql:
   host: 127.0.0.1 (on s1, collocated with app at baseline)
   port: 3306
