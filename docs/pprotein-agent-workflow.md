@@ -23,7 +23,7 @@ Use this as a fallback when the initialize hook is disabled or unavailable.
 3. Human starts pprotein collection from the dashboard or `/api/group/collect` only when automatic collection is unavailable.
 4. Human starts the official benchmark.
 5. Codex reads the generated reports/logs after the run.
-6. Codex records the run in `reports/history/` and suggests the next action.
+6. Codex records the run in `reports/iterations/` (and `reports/summary/<contest>.md` for the overall status) and suggests the next action.
 
 ### Agent
 
