@@ -283,6 +283,17 @@ None of this MCP/orchestrator layer has actually been used to do real ISUCON tun
 | Verifier Agent | `docs/skills/verifier-agent.md` | `baseline`, `deploy`, `analyze_iteration` | `BenchmarkMCP`, `DeployMCP`, `LogsMCP`, `PproteinMCP`, `GitMCP` |
 | Recorder Agent | `docs/skills/recorder-agent.md` | `record_improvement` | `HistoryMCP`, `IterationMCP`, `GitMCP` |
 
+## Current Environment Notes — ISUCON12 qualify (ISUPORTS) — most recent project (2026-09-24)
+
+Facts in `config/isucon12.yaml`; history in `reports/summary/isucon12.md`. Repo `git@github.com:itohdak/isucon12_qualify_practice_2.git` (local clone `/home/itohdak/isucon/isucon12_qualify_practice_2`, edit locally -> push -> `scripts/run_cycle.sh <label>` deploys to s2+s1, benches from s4, runs alp/slp). Manuals: `/home/itohdak/Downloads/isucon12q_manual.md` is the *application* manual and `isucon12q_application_manual.md` is the *contest-day* manual (names are swapped).
+
+- Layout: s1 app only, s2 nginx (TLS entry, the bench target) + MySQL, s3 spare, s4 bench + pprotein + netdata parent. Score went 2586 -> ~240k (bench-host limited).
+- Per-tenant SQLite files + a MySQL admin DB; the bench runs from `~/bench` (`./bench -target-url https://t.isucon.local -target-addr <ip>:443`, needs `ulimit -n` raised and wider port range on the bench host).
+- SSH user is `isucon` with the GitHub-registered key `~/.ssh/isucon_id_rsa`; MySQL root is `root/root` (no socket auth); `unattended-upgrade` runs for the first ~hour on a fresh instance and must be disabled (in the ansible `general` role now).
+- The CloudFormation IAM user (`isucon15.prep` profile) can create/update/delete stacks but cannot stop instances or continue a failed rollback; resizing an instance in place fails with `UPDATE_ROLLBACK_FAILED`. Create instances at the intended size. The stack is currently in that state (see the iteration 5-10 report for the repair command).
+- Sub-agents: the four analysis roles were NOT delegated in this project's first session (done inline; the user asked why afterwards). Delegate them per the Sub-Agent Execution Protocol unless told otherwise.
+- Durable technical lessons: `reports/iterations/iteration-isucon12-05-10.md` ("Reusable lessons") and `iteration-isucon12-01-04.md`.
+
 ## Current Environment Notes — ISUCON13 (ISUPipe) — ACTIVE PROJECT
 
 **This is the currently active project as of 2026-09-23.** A separate, currently-paused ISUCON14 (ISURIDE) project also lives in this same `isucon_ai_tools` repo (its own config, reports, and environment notes are further below) — do not mix up route lists, service names (`isuride-*` vs `isupipe-*`), schema, or scoring model between the two. ISUPipe scores by total Tip (ISUCOIN) amount over the bench run, not a synthetic points formula.
