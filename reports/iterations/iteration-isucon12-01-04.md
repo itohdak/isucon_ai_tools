@@ -2,7 +2,7 @@
 
 App repo: `git@github.com:itohdak/isucon12_qualify_practice_2.git`. Bench: `./bench` on s3 against s1 (single serving host), 60 s load. Scores are single runs unless noted (contest-style scarcity of runs is not an issue on this practice env, but each cycle here was one deploy + one bench + alp/slp/pprof/netdata evidence).
 
-Sub-agents were not used because: the harness for this session says to work inline unless the user asks for sub-agents; Profiler / Resource Monitor / SQL / App-Understanding analysis was done directly (alp + slp via `scripts/analyze.sh`, pprotein pprof via `scripts/pprof_top.sh`, netdata via `scripts/resources.sh`, code reading of the 1.6k-line reference app and the bench source).
+Sub-agents were not used because: the session's tooling guidance was to work inline unless the user explicitly asks for sub-agents (the user did not, and later asked why none were used; this deviates from the AGENTS.md default of delegating the four analysis roles at loop start); Profiler / Resource Monitor / SQL / App-Understanding analysis was done directly (alp + slp via `scripts/analyze.sh`, pprotein pprof via `scripts/pprof_top.sh`, netdata via `scripts/resources.sh`, code reading of the 1.6k-line reference app and the bench source).
 
 ## Baseline
 

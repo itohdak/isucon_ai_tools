@@ -12,30 +12,36 @@ ssh:
 hosts:
   # Public IPs are reassigned on every stack recreation; private IPs are fixed by the template.
   # ssh: ssh -i ~/.ssh/isucon_id_rsa isucon@<public_ip>   (user is `isucon`, not `ubuntu`, on this AMI)
+  # 4-host layout since iteration 6 (template cf-template-isucon12-qualify-4host.yaml).
   s1:
     public_ip: 13.159.132.116
     private_ip: 192.168.0.11
-    role: "load-targeted: nginx + isuports (native binary) + MySQL (admin DB) + blackauth. Started as the only serving host."
+    role: "app only: isuports (native binary, :3000, pprof :8888). nginx/mysql disabled. env.sh -> ISUCON_DB_HOST=192.168.0.12"
   s2:
     public_ip: 13.115.203.32
     private_ip: 192.168.0.12
-    role: "load-targeted, idle at first (symmetric with s1: same netdata/pprotein-agent/Go/git checkout). Split target."
+    role: "entry + DB: nginx (TLS, upstream s1:3000, LTSV access log) + MySQL (isuports admin DB, slow log). isuports disabled. The bench targets s2:443."
   s3:
     public_ip: 54.249.223.82
     private_ip: 192.168.0.13
-    role: "bench + pprotein + netdata parent (per the user: s3 is bench/pprotein, add a 4th instance only if needed)"
+    role: "spare competition server, symmetric with s1/s2 (git checkout, Go, netdata child, pprotein-agent); unused so far"
+  s4:
+    public_ip: 57.182.197.30
+    private_ip: 192.168.0.14
+    role: "bench + pprotein + netdata parent (c5.large; resize to xlarge was denied by IAM, see iteration report 05-10)"
 benchmark:
-  where: s3
-  command: "ssh s3 'bash -s -- <label> [target_addr]' < isucon12_qualify_practice_2/scripts/bench.sh"
-  raw: "cd ~/bench && ./bench -target-url https://t.isucon.local -target-addr 192.168.0.11:443"
+  where: s4
+  command: "ssh s4 'bash -s -- <label> [target_addr]' < isucon12_qualify_practice_2/scripts/bench.sh"
+  raw: "cd ~/bench && ./bench -target-url https://t.isucon.local -target-addr 192.168.0.12:443"
   duration: "60 s load + ~20 s prepare/validation; POST /initialize has a 30 s timeout"
   notes:
     - "The bench in this practice env uses *.t.isucon.local hosts (the app's default ISUCON_BASE_HOSTNAME); the contest docs use *.t.isucon.dev. The tracked app now accepts both suffixes."
     - "The real contest bench runs from the portal (rate-limited); here we run ./bench on s3 ourselves. -target-addr points at the host to load (a single host: nginx on s1)."
     - "Score = sum of per-endpoint points (1 or 10) of successful requests, minus 1%/error (10% for critical errors)."
+  current_score: "~240k gross (233844-240397, pass, 0 errors on clean runs; bench-host limited), 237856 right after a reboot of s1+s2 (2026-09-24). Reference-app baseline below."
   baseline_score: "2586 pristine (docker, no logging, 2026-09-24); 1834 with nginx LTSV + MySQL slow log (long_query_time=0) + pprotein on, native binary. Both pass=true, 0 errors."
 mysql:
-  host: 127.0.0.1 (s1)
+  host: 192.168.0.12 (s2, split from s1 in iteration 6)
   database: isuports (admin DB: tenant, id_generator, visit_history). Tenant data is in per-tenant SQLite files in webapp/tenant_db/<tenant_id>.db.
   root_access: "mysql -uroot -proot (root has a password on this AMI; socket auth does not work)"
   app_user: isucon/isucon
@@ -48,6 +54,6 @@ logs:
   observability_enabled: true
   nginx_access_log: /var/log/nginx/access.log (LTSV incl. vhost, reqtime, apptime)
   mysql_slow_log: /var/log/mysql/mysql-slow.log (slow_query_log=1, long_query_time=0; NOTE: does not cover the SQLite tenant DBs)
-  pprotein: "http://s3:9000 (ssh -L 9000:127.0.0.1:9000 isucon@<s3>); collect is triggered by the app's POST /initialize (GET http://s3:9000/api/group/collect); pprof + httplog + slowlog windows are 90 s from initialize"
-  netdata: "parent on s3 :19999 (mirrored_hosts s3,s1,s2)"
-  analysis: "ssh s1 'bash -s' < isucon12_qualify_practice_2/scripts/analyze.sh   (alp + slp on the live logs)"
+  pprotein: "http://s4:9000 (ssh -L 9000:127.0.0.1:9000 isucon@<s4>); collect is triggered by the app's POST /initialize (GET http://s3:9000/api/group/collect); pprof + httplog + slowlog windows are 90 s from initialize"
+  netdata: "parent on s4 :19999 (mirrored_hosts s4,s3,s2,s1)"
+  analysis: "ssh s2 'bash -s' < isucon12_qualify_practice_2/scripts/analyze.sh   (alp + slp on the live logs)"
