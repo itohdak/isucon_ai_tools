@@ -42,6 +42,6 @@ Score before/after, pass/fail, full error map, regression verdict, and — if th
 
 ## ISUCON13 Session-3 Notes (2026-09-24)
 
-- Always record the bench's scenario counts next to the score (`viewer`, `aggressive-streamer-moderate`, `viewer-spam`, `DNSAttacker並列数`): a change that speeds up search/list routes raises the spam/moderate counts ~2.5x and lowers the score, while changes on the viewer (tip-producing) paths raise `viewer` completions. `/tmp/bench.out` on s4 has them; `scratchpad/bench.sh`-style wrappers should print them.
+- Always record the bench's scenario counts next to the score (`viewer`, `aggressive-streamer-moderate`, `viewer-spam`, `DNSAttacker並列数`): a change that speeds up search/list routes raises the spam/moderate counts ~2.5x and lowers the score, while changes on the viewer (tip-producing) paths raise `viewer` completions. `/tmp/bench.out` on s4 has them; `scripts/isucon13_bench.sh` prints them.
 - At ~240k the run-to-run mode split is ~225k vs ~248k (one or two low-mode runs per six); compare 6-run means and expect ~+-2.5% noise on the mean.
 - Do not start a bench while a Profiler/SQL agent is still running `slp`/`pprof` on s4 (the bench host is ~90% busy on its own).
