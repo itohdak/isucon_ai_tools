@@ -39,3 +39,9 @@ Score before/after, pass/fail, full error map, regression verdict, and — if th
 - Above ~100k the run-to-run noise is +/-5% (single runs of identical code ranged 150k-170k). Use >= 4 runs per leg and prefer alternating A/B legs over remembered baselines; small (<3%) differences are not attributable.
 - Read the bench log (`/tmp/bench.log` on s3, or `result.json` messages) for scenario counts and `DNSAttacker並列数` — the closed-loop bench shifts scenario mix and escalates DNS attack load when parts of the app get faster, which is what explains "obviously cheaper but net slower" outcomes.
 - Benchmark noise sources to rule out first: `unattended-upgrade` on either host (ps), analysis jobs (slp/pprof) running during a scored run, and an oversized `mysql-slow.log` (only `deploy_db.sh` truncates it).
+
+## ISUCON13 Session-3 Notes (2026-09-24)
+
+- Always record the bench's scenario counts next to the score (`viewer`, `aggressive-streamer-moderate`, `viewer-spam`, `DNSAttacker並列数`): a change that speeds up search/list routes raises the spam/moderate counts ~2.5x and lowers the score, while changes on the viewer (tip-producing) paths raise `viewer` completions. `/tmp/bench.out` on s4 has them; `scratchpad/bench.sh`-style wrappers should print them.
+- At ~240k the run-to-run mode split is ~225k vs ~248k (one or two low-mode runs per six); compare 6-run means and expect ~+-2.5% noise on the mean.
+- Do not start a bench while a Profiler/SQL agent is still running `slp`/`pprof` on s4 (the bench host is ~90% busy on its own).
