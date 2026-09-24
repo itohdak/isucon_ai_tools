@@ -33,3 +33,9 @@ When resource evidence matters for the verdict, use the Resource Monitor Agent s
 ## Output Contract
 
 Score before/after, pass/fail, full error map, regression verdict, and — if the change is being accepted despite ambiguous score movement — the specific evidence (A/B result, resource headroom, or query-level timing) that justifies the accept/reject decision beyond a bare score number.
+
+## ISUCON13 Session-2 Notes (2026-09-24)
+
+- Above ~100k the run-to-run noise is +/-5% (single runs of identical code ranged 150k-170k). Use >= 4 runs per leg and prefer alternating A/B legs over remembered baselines; small (<3%) differences are not attributable.
+- Read the bench log (`/tmp/bench.log` on s3, or `result.json` messages) for scenario counts and `DNSAttacker並列数` — the closed-loop bench shifts scenario mix and escalates DNS attack load when parts of the app get faster, which is what explains "obviously cheaper but net slower" outcomes.
+- Benchmark noise sources to rule out first: `unattended-upgrade` on either host (ps), analysis jobs (slp/pprof) running during a scored run, and an oversized `mysql-slow.log` (only `deploy_db.sh` truncates it).

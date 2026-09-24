@@ -32,3 +32,10 @@ New columns on an existing table must go through a post-seed `ALTER TABLE` in `w
 ## After Implementing
 
 List every changed file explicitly in your final answer. Do not deploy or run destructive commands yourself unless the loop has already delegated that — implementation and verification are separate roles per `AGENTS.md`'s Default Improvement Loop, even when Codex ends up doing both directly.
+
+## ISUCON13 Session-2 Notes (2026-09-24)
+
+- The Go binary lives at `/home/isucon/local/golang/bin/go` (not on PATH for non-interactive ssh); `gofmt` is next to it. Quick loop that worked: edit a local copy in the scratchpad, `scp` to s1, `go vet .` there, `git commit && git push` on s1 (first push needs `git push --set-upstream origin main` on a fresh checkout), `bash ./deploy.sh` (HOSTNAME=s1), `git pull` on s2 to keep checkouts in sync.
+- For a live-only A/B control: `git checkout <old-commit> -- webapp/go && deploy.sh`, bench, then `git checkout HEAD -- webapp/go`. To drop a rejected change use a normal `git revert` (app code only; never revert the tracked observability settings).
+- In-process caches are safe here only for data with no UPDATE/DELETE path (users, themes, icon bytes/hash via the single writer `postIconHandler`); use `LoadOrStore` for readers and `Store` after commit for the writer, clear everything in `initializeHandler` (TRUNCATE + id reuse). Not every such cache wins in the closed-loop bench: the livestream tag-list cache regressed ~7.6% — A/B with >= 3 runs each way.
+- Freshly recreated instances run `unattended-upgrade` for the first ~30-60 min (see AGENTS.md); disable it before trusting any number.

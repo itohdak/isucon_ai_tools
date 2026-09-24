@@ -38,6 +38,8 @@ The correct pattern (already used for `chairs.total_distance`): add the new colu
 
 On the ISUCON13 practice environment (`s1` = app+DB combined, only 2 vCPUs, confirmed CPU-saturated during benchmark runs), leaving `slow_query_log=1`/`long_query_time=0` enabled during a **scored** benchmark run cost ~20-25% of the score in an isolated A/B test (8707 vs 10676-11356 on an otherwise-identical config) — logging every single query has a real CPU/IO cost on a constrained host, not just a disk-space cost. Also beware: `common/etc/mysql/mysql.conf.d/mysqld.cnf` is git-tracked and gets copied over the live config (then `mysqld` is restarted) on every `deploy.sh` run — a live-only `SET GLOBAL`/`sed` fix to enable slow-query logging will silently revert on the next deploy unless the tracked file itself is also updated.
 
+**SUPERSEDED (2026-09-23, user-directed): slow-query logging (`slow_query_log=1`, `long_query_time=0`) is now a permanent, tracked default in `mysqld.cnf` — never revert it there. The transient-only protocol below is kept only as history of why it once was tried; a logging-off A/B, if ever wanted, must be a clearly-labeled live-only `SET GLOBAL` experiment restored afterwards.**
+
 Protocol: only enable slow-query logging transiently, immediately before a dedicated analysis-only benchmark run (`SET GLOBAL slow_query_log = 1; SET GLOBAL long_query_time = 0;` — this is a live, non-persistent change and is fine to leave un-committed), collect the log, then disable it again (`SET GLOBAL slow_query_log = 0;`) before the next benchmark run whose score is meant to count. Do not persist `slow_query_log=1` in the tracked `mysqld.cnf` for this project.
 
 ## ISUCON13 (ISUPipe) Environment Note: Don't "Fix" PowerDNS Speed Without Re-Checking The Benchmark's Adaptive Load
@@ -48,3 +50,11 @@ Adding a missing index to PowerDNS's own `isudns.records` table (`name`/`type` �
 
 - Re-adding an in-process (Go-side) cache for auth/lookup data — tried twice this session (access-token cache, and separately a `FOR SHARE` lock removal that turned out to cost, not save, performance under A/B testing) and rejected both times. If you think an app-level cache would help, flag it as a hypothesis for Codex to A/B test carefully, not a confident recommendation.
 - Increasing `innodb_buffer_pool_size` as a priority fix unless you've checked the actual working-set size and buffer-pool hit ratio (`SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool%'`) — this dataset is small enough (~15-20MB) that the default 128MB pool already has a >99.999% hit ratio in practice; it wasn't the bottleneck.
+
+## ISUCON13 Session-2 Lessons (2026-09-24)
+
+- **Where to run `slp`**: the slow log is 250-450MB per bench run; `slp` OOM-kills the 3.6GB s2. Run it on s3 against the pprotein artifact (`/home/isucon/data/*-slowlog.log`; s3 has headroom; still do `echo 1000 | sudo tee /proc/self/oom_score_adj` first so slp, not pprotein, is the victim). To exclude PowerDNS traffic, filter to `# User@Host: isucon[` blocks with awk before slp (isudns queries are a separate user).
+- **Count `Prepare`/`Close stmt` in the raw log**: `slp`'s default filter only keeps SELECT/INSERT/UPDATE, so a missing `interpolateParams=true` (3 round trips per query: 249k Prepares = 15s of MySQL time per window) is invisible in its table. Found this way in iteration 8 (+20%).
+- **Per-call cost is not the story once indexes exist**: after the indexes are in, every hot isupipe query is `ref`/`const` at ~0.1ms; the score moves by removing *queries* (caches of immutable data, dropping BEGIN/COMMIT, `interpolateParams`), not by more indexing.
+- **`isudns.records` index: rejected three times** (2 in this environment's history plus once more under the fully-tuned regime): the bench's DNS attacker escalates with DNS speed (parallelism 3 -> 4 -> 9). Do not retry.
+- **MySQL server config was stock** and worth +13% on the CPU-bound db host: `disable_log_bin`, `innodb_flush_log_at_trx_commit=2`, `innodb_flush_method=O_DIRECT` (allowed by the rules: data only has to survive a clean reboot). `performance_schema=OFF`, 1G buffer pool/redo were neutral.

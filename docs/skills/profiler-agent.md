@@ -41,3 +41,10 @@ slp my --file <slowlog> --sort sum-query-time --reverse --limit 5000
 ## Output Contract
 
 Report top 6-8 routes by total time (with count/avg/p99) and top 8-10 SQL shapes by total time (with count/avg), plus any non-2xx anomalies. Do not editorialize about fixes — that's the next agent's job.
+
+## ISUCON13 Session-2 Notes (2026-09-24)
+
+- **CPU profile**: read pprotein's own artifact on s3 (`ls -t /home/isucon/data/*pprof.pb.gz | head -1`; `cd /tmp && /home/isucon/local/golang/bin/go tool pprof -top -cum -nodecount=45 <file>`, also `-top` for flat and `-peek 'main.handler'`). A manual `curl :8888/debug/pprof/profile` on s1 fails with "cpu profiling already in use" because pprotein's collection holds it during the run.
+- **Per-process CPU from netdata** (through s3's parent, `app.<proc>_cpu_utilization` charts for `isupipe`, `nginx`, `pdns_server`, `mysqld`, `systemd-journald`, `netdata`) exposed journald (echo access log) and per-connection nginx overhead as real costs. Use a steady-state sub-window (skip the first ~30s and last ~5s) — averaging the whole bench window dilutes the numbers with setup/idle.
+- pprotein collects only a recent 60s window of each log and never truncates them; artifacts therefore reflect roughly the last minute of a run.
+- After each accepted change, profile again: the top of the list moved every time (sha256 -> DB round trips -> nginx connections -> journald).
