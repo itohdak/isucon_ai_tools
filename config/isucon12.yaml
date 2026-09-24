@@ -1,0 +1,53 @@
+environment: isucon12
+app: isuports (ISUCON12 qualify, multi-tenant SaaS leaderboard; Go reference implementation)
+aws:
+  profile: isucon15.prep
+  region: ap-northeast-1
+  stack_name: isucon12-qualify
+  template: isucon_cf_provisioning/isucon12_qualify/cf-template-isucon12-qualify.yaml
+  key_pair: isucon
+ssh:
+  user: isucon
+  private_key_path: /home/itohdak/.ssh/isucon_id_rsa   # the key registered on GitHub (UserData installs github.com/itohdak.keys)
+hosts:
+  # Public IPs are reassigned on every stack recreation; private IPs are fixed by the template.
+  # ssh: ssh -i ~/.ssh/isucon_id_rsa isucon@<public_ip>   (user is `isucon`, not `ubuntu`, on this AMI)
+  s1:
+    public_ip: 13.159.132.116
+    private_ip: 192.168.0.11
+    role: "load-targeted: nginx + isuports (native binary) + MySQL (admin DB) + blackauth. Started as the only serving host."
+  s2:
+    public_ip: 13.115.203.32
+    private_ip: 192.168.0.12
+    role: "load-targeted, idle at first (symmetric with s1: same netdata/pprotein-agent/Go/git checkout). Split target."
+  s3:
+    public_ip: 54.249.223.82
+    private_ip: 192.168.0.13
+    role: "bench + pprotein + netdata parent (per the user: s3 is bench/pprotein, add a 4th instance only if needed)"
+benchmark:
+  where: s3
+  command: "ssh s3 'bash -s -- <label> [target_addr]' < isucon12_qualify_practice_2/scripts/bench.sh"
+  raw: "cd ~/bench && ./bench -target-url https://t.isucon.local -target-addr 192.168.0.11:443"
+  duration: "60 s load + ~20 s prepare/validation; POST /initialize has a 30 s timeout"
+  notes:
+    - "The bench in this practice env uses *.t.isucon.local hosts (the app's default ISUCON_BASE_HOSTNAME); the contest docs use *.t.isucon.dev. The tracked app now accepts both suffixes."
+    - "The real contest bench runs from the portal (rate-limited); here we run ./bench on s3 ourselves. -target-addr points at the host to load (a single host: nginx on s1)."
+    - "Score = sum of per-endpoint points (1 or 10) of successful requests, minus 1%/error (10% for critical errors)."
+  baseline_score: "2586 pristine (docker, no logging, 2026-09-24); 1834 with nginx LTSV + MySQL slow log (long_query_time=0) + pprotein on, native binary. Both pass=true, 0 errors."
+mysql:
+  host: 127.0.0.1 (s1)
+  database: isuports (admin DB: tenant, id_generator, visit_history). Tenant data is in per-tenant SQLite files in webapp/tenant_db/<tenant_id>.db.
+  root_access: "mysql -uroot -proot (root has a password on this AMI; socket auth does not work)"
+  app_user: isucon/isucon
+git:
+  remote_origin: git@github.com:itohdak/isucon12_qualify_practice_2.git
+  local_clone: /home/itohdak/isucon/isucon12_qualify_practice_2
+  app_repo_path: /home/isucon   # repo root on s1/s2 is the home dir; bench/blackauth/data/initial_data/public/tmp/tenant_db are gitignored
+  workflow: "edit locally -> git push -> `git pull && bash common/deploy.sh` on the host(s) (deploy.sh derives sN from the private IP; ../sN/{env.sh,etc/,services} override common)"
+logs:
+  observability_enabled: true
+  nginx_access_log: /var/log/nginx/access.log (LTSV incl. vhost, reqtime, apptime)
+  mysql_slow_log: /var/log/mysql/mysql-slow.log (slow_query_log=1, long_query_time=0; NOTE: does not cover the SQLite tenant DBs)
+  pprotein: "http://s3:9000 (ssh -L 9000:127.0.0.1:9000 isucon@<s3>); collect is triggered by the app's POST /initialize (GET http://s3:9000/api/group/collect); pprof + httplog + slowlog windows are 90 s from initialize"
+  netdata: "parent on s3 :19999 (mirrored_hosts s3,s1,s2)"
+  analysis: "ssh s1 'bash -s' < isucon12_qualify_practice_2/scripts/analyze.sh   (alp + slp on the live logs)"
