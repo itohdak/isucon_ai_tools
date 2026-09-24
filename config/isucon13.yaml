@@ -9,7 +9,7 @@ ssh:
   private_key_path: /home/itohdak/.ssh/isucon.pem
 hosts:
   # Role mapping: s1 is app+nginx+pdns only, s2 is a dedicated MySQL host,
-  # s3 is the dedicated bench/pprotein host. Split originally executed
+  # s3 is the DNS host (since 2026-09-24) and s4 the bench/pprotein host. Split originally executed
   # 2026-09-23 on Resource Monitor Agent evidence (s1's 2 vCPUs saturated
   # with mysqld ~1 core + app ~0.65 core, from iteration 5 of the first
   # tuning session) under the user's standing authorization to execute
@@ -37,20 +37,26 @@ hosts:
     private_ip: 192.168.0.11
     app_path: /home/isucon/webapp
     instance_id: i-083a9a3025747cb9d
-    role: app + nginx + pdns (MySQL split out to s2; local mysql.service stopped and disabled)
+    role: app + nginx (MySQL on s2, DNS on s3; local mysql.service and pdns.service stopped and disabled)
   db:
     name: isucon13-2
     public_ip: 13.193.230.57
     private_ip: 192.168.0.12
     instance_id: i-0672e13b79d397b58
-    role: "dedicated MySQL host, serves both the isupipe app DB and PowerDNS's isudns backend DB. bind-address=0.0.0.0 in the tracked mysqld.cnf, restricted at the security-group/VPC layer to 192.168.0.0/24 (same pattern as the isucon14 project's DB split). isucon@'%' / isudns@'%' remote-capable users created via webapp/sql/initdb.d/00_create_database.sql (the AMI's default users were localhost-only). Deployed via common/deploy_db.sh (separate from common/deploy.sh, which is app-host-only and no longer touches mysql)."
-  bench:
+    role: "dedicated MySQL host for the isupipe app DB (PowerDNS's isudns DB moved to s3 on 2026-09-24). bind-address=0.0.0.0 in the tracked mysqld.cnf, restricted at the security-group/VPC layer to 192.168.0.0/24 (same pattern as the isucon14 project's DB split). isucon@'%' / isudns@'%' remote-capable users created via webapp/sql/initdb.d/00_create_database.sql (the AMI's default users were localhost-only). Deployed via common/deploy_db.sh (separate from common/deploy.sh, which is app-host-only and no longer touches mysql)."
+  dns:
     name: isucon13-3
     public_ip: 35.76.34.10
     private_ip: 192.168.0.13
-    bench_binary: /home/isucon/bench
     instance_id: i-0dd96ff0904dff6dd
-    role: bench + pprotein host; app-role services (isupipe-go, mysql, pdns, nginx) stopped and disabled here
+    role: "DNS host (moved here 2026-09-24): pdns_server + its own local MySQL holding only the isudns database (isudns@'%' remote user so s1's pdnsutil/init_zone.sh can load the zone). Tracked mysqld.cnf applied via common/deploy_db.sh. It answers every query with s1's IP (192.168.0.11) -- the manual only requires the A record to be one of the registered servers. s1's pdns_server is stopped/disabled."
+  bench:
+    name: isucon13-4-bench
+    public_ip: 54.95.242.1
+    private_ip: 192.168.0.14
+    bench_binary: /home/isucon/bench
+    instance_id: i-094746f9a5f2eaeff
+    role: "bench + pprotein + netdata parent (added 2026-09-24 via CloudFormation change set, template isucon_cf_provisioning/isucon13/cf-template-isucon13-4host.yaml). This makes the three provisioned instances (s1/s2/s3) all competition servers, matching the real contest where the bench runs portal-side. unattended-upgrades is disabled in UserData -- on freshly created instances it otherwise burns CPU for 30-60 min and produces bogus scores."
 benchmark:
   working_directory: /home/isucon
   command:
@@ -62,17 +68,17 @@ benchmark:
     - --target
     - https://pipe.u.isucon.local:443
     - --nameserver
-    - "192.168.0.11"
+    - "192.168.0.13"
     - --webapp
     - "192.168.0.11"
     - --enable-ssl
   target_url: https://pipe.u.isucon.local
-  nameserver: 192.168.0.11
+  nameserver: 192.168.0.13 (s3, the DNS host; bench runs from s4)
   dns_port: 53
   notes:
     - This is a self-managed practice environment (not the ISUCON13 portal), built from the team's own saved CloudFormation template. The portal-specific envcheck / aws-env-isucon-subdomain-address services are therefore not registered (envcheck reports "チェッカーの設定ファイルが読み込めませんでした"), which is expected and not a fault.
     - The app's local practice domain is u.isucon.local (self-signed cert in /etc/nginx/tls), not the real contest's u.isucon.dev.
-    - PowerDNS on s1 must have ISUCON13_POWERDNS_SUBDOMAIN_ADDRESS in /home/isucon/env.sh set to s1's own private IP (192.168.0.11), then `bash /home/isucon/webapp/pdns/init_zone.sh` re-run, so that pipe.u.isucon.local and *.u.isucon.local resolve to s1 when queried via --nameserver 192.168.0.11 from s3. (PowerDNS itself still runs on s1 post-split; only its isudns backend database moved to s2 -- see mysql section below.)
+    - PowerDNS on s1 must have ISUCON13_POWERDNS_SUBDOMAIN_ADDRESS in /home/isucon/env.sh set to s1's own private IP (192.168.0.11), then `bash /home/isucon/webapp/pdns/init_zone.sh` re-run, so that pipe.u.isucon.local and *.u.isucon.local resolve to s1 when queried via --nameserver 192.168.0.13 from s4. The zone is loaded by s1's init.sh -> init_zone.sh (pdnsutil writes to s3's isudns DB via s1's /etc/powerdns/pdns.d/gmysql-host.conf = 192.168.0.13); pdns_server itself runs only on s3 since 2026-09-24.
   baseline_score: 3371 # original baseline, commit d5bd00d. After the first 10-iteration session (2026-09-23): 17424.7 avg (3-run, session-best single run 18136) at commit 45e1aaf (~5.17x baseline) -- see reports/iterations/iteration-20260923-234500.md. Iterations 2 (stats N+1 alone), 6 (PowerDNS index + persistent slow-query-log), and 7 (icon conditional-GET) were tested and REJECTED/reverted -- see their iteration reports. After the MySQL/s2 split (2026-09-23, commit 309c390): 27934.7 avg (3 runs: 28773/27402/27629, all pass=true) -- ~1.65x further gain, ~8.29x original baseline. Second session, iteration 1 (2026-09-24, commit b1e926d): 26491.7 avg (3 runs: 25963/27127/26383, all pass=true) -- roughly flat vs 27934.7 (today's session noise floor appears slightly lower overall; same-session old-code A/B control scored only 25090). (Iteration 2 same session: search tag-filter N+1 batched, commit eca2362, neutral vs clean control 26023 vs 25643; isudns.records index re-tested and rejected again 24092.) Iterations 14-15 (commits c0a52ff GOGC=400, c882bfb no-tx read handlers; both small/neutral): 162159 avg over 4 runs at c882bfb (176064/158750/153660/160160), the current HEAD state (~48x original baseline); iteration 16 (isudns index re-test) REJECTED a third time (attacker parallelism 9). Iteration 13 (commit 5ec4247, echo access logger dropped + app log level WARN): 157683 avg over 6 runs (168456/150277/152806/169874/154257/150427, all pass=true) -- current best, ~46.8x original baseline. Iteration 12 (commit 7cdeba0, nginx upstream keepalive + TLS session cache): 147707 avg (151083/145928/146110, all pass=true) -- current best, ~43.8x original baseline. Iteration 11 (commit 9430c14, echo Debug=false): 134079 avg (136587/131115/134536, all pass=true) -- current best, ~39.8x original baseline; iteration 10 (livestream tag cache, 4588777) was REJECTED and reverted (0236454): ~-7.6% in A/B. Iteration 9 (commit 8923b12, icon endpoint: no tx + in-memory icon/name caches + 304): 127753 avg (127447/126518/129294, all pass=true) -- current best, ~37.9x original baseline. Iteration 8 (commit 23e26e8, MySQL DSN interpolateParams=true): 83307 avg (84453/83098/82369, all pass=true) -- current best, ~24.7x original baseline. Iteration 7 (commit 167a643, reservation_slots sargable range + no per-slot re-query): 69329 avg (69037/69740/69210, all pass=true) -- current best, ~20.6x original baseline. Iteration 6 (commit 120aea8, in-process users/themes caches): 61371 avg (63046/60123/60945, all pass=true) -- current best, ~18x original baseline. Iteration 5 (commit 3b27cbc, in-process icon sha256 cache; iteration 4 a3386ee perf_schema OFF/1G pool was neutral 29014): 37067 avg (37710/36375/37117, all pass=true) -- current best, ~11x original baseline. Iteration 3 (commit 587f9e0, MySQL binlog off + flush_log_at_trx_commit=2 + O_DIRECT): 29302 avg (30057/28801/29048, all pass=true), ~+13.4% vs clean same-session control 25833 -- current best. A separate icon_hash optimization was tried, confirmed cheaper per-query but net-REGRESSED score (15880/17682), and was reverted -- see reports/iterations/iteration-20260923-152055.md. See reports/summary/isucon13.md for the full chronological trail. Known open issue: GET /report 500 for orphaned reports on already-moderated-away comments is now FIXED (skips the orphaned row instead of 500ing, commit 8642c2a) -- no longer an open item.
 mysql:
   host: 192.168.0.12 (s2, split from s1 on 2026-09-23)
@@ -148,13 +154,13 @@ api_aggregation:
     - ^/api/initialize$
 pprotein:
   enabled: true
-  host: s3
-  public_ip: 35.76.34.10
-  private_ip: 192.168.0.13
+  host: s4
+  public_ip: 54.95.242.1
+  private_ip: 192.168.0.14
   base_url: http://127.0.0.1:9000
   dashboard_url: http://127.0.0.1:9000/#/group/
   targets_file: /home/isucon/data/targets.json
-  ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 9000:127.0.0.1:9000 isucon@35.76.34.10
+  ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 9000:127.0.0.1:9000 isucon@54.95.242.1
   collection:
     mode: initialize_hook
     collect_endpoint: /api/group/collect
@@ -165,19 +171,20 @@ pprotein:
       - initialize_hook
   notes:
     - "The correct trigger call is a plain GET to /api/group/collect (e.g. `curl http://127.0.0.1:9000/api/group/collect`), NOT POST -- POST returns 404. Verified 2026-09-23."
-    - collectPprotein() is wired into webapp/go/main.go's initializeHandler, calling PPROTEIN_COLLECT_URL (default http://s3:9000/api/group/collect) asynchronously and best-effort, matching the isucon14_practice pattern.
+    - collectPprotein() is wired into webapp/go/main.go's initializeHandler, calling PPROTEIN_COLLECT_URL (default http://s4:9000/api/group/collect) asynchronously and best-effort, matching the isucon14_practice pattern.
     - go standalone.Integrate(":8888") added to main() for pprof; added github.com/kaz/pprotein dependency via `go get` + `go mod tidy` (also bumped go toolchain to 1.23.3 and a few transitive deps -- go-sql-driver/mysql 1.7.1->1.8.1, echo 4.11.1->4.12.0 -- as an unavoidable side effect of adding the pprotein dependency).
 netdata:
   enabled: true
   parent:
-    host: s3
-    private_ip: 192.168.0.13
+    host: s4
+    private_ip: 192.168.0.14
     port: 19999
-  ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 19999:127.0.0.1:19999 isucon@35.76.34.10
+  ssh_tunnel: ssh -i /home/itohdak/.ssh/isucon.pem -L 19999:127.0.0.1:19999 isucon@54.95.242.1
   hosts:
     app: s1
     db: s2
-    bench: s3
+    bench: s4
+    dns: s3
 services:
   app:
     - isupipe-go.service
