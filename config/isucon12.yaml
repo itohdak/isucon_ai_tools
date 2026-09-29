@@ -4,7 +4,7 @@ aws:
   profile: isucon15.prep
   region: ap-northeast-1
   stack_name: isucon12-qualify
-  template: isucon_cf_provisioning/isucon12_qualify/cf-template-isucon12-qualify.yaml
+  template: isucon_cf_provisioning/isucon12_qualify/cf-template-isucon12-qualify-4host.yaml
   key_pair: isucon
 ssh:
   user: isucon
@@ -14,19 +14,19 @@ hosts:
   # ssh: ssh -i ~/.ssh/isucon_id_rsa isucon@<public_ip>   (user is `isucon`, not `ubuntu`, on this AMI)
   # 4-host layout since iteration 6 (template cf-template-isucon12-qualify-4host.yaml).
   s1:
-    public_ip: 13.159.132.116
+    public_ip: 57.181.139.41
     private_ip: 192.168.0.11
     role: "app only: isuports (native binary, :3000, pprof :8888). nginx/mysql disabled. env.sh -> ISUCON_DB_HOST=192.168.0.12"
   s2:
-    public_ip: 13.115.203.32
+    public_ip: 54.178.187.119
     private_ip: 192.168.0.12
     role: "entry + DB: nginx (TLS, upstream s1:3000, LTSV access log) + MySQL (isuports admin DB, slow log). isuports disabled. The bench targets s2:443."
   s3:
-    public_ip: 54.249.223.82
+    public_ip: 13.197.1.132
     private_ip: 192.168.0.13
     role: "spare competition server, symmetric with s1/s2 (git checkout, Go, netdata child, pprotein-agent); unused so far"
   s4:
-    public_ip: 57.182.197.30
+    public_ip: 57.181.86.161
     private_ip: 192.168.0.14
     role: "bench + pprotein + netdata parent (c5.large; resize to xlarge was denied by IAM, see iteration report 05-10)"
 benchmark:
@@ -45,6 +45,8 @@ mysql:
   database: isuports (admin DB: tenant, id_generator, visit_history). Tenant data is in per-tenant SQLite files in webapp/tenant_db/<tenant_id>.db.
   root_access: "mysql -uroot -proot (root has a password on this AMI; socket auth does not work)"
   app_user: isucon/isucon
+environment_history:
+  - "Stack recreated 2026-09-29 (previously deleted for cost savings) to verify two experimental branches (experiment/request-tracing, experiment/actor-transition-trace) on real hardware. Same 4-host template/private IPs; public IPs above are current as of this recreation. See reports/summary/isucon12.md for the verification outcome."
 git:
   remote_origin: git@github.com:itohdak/isucon12_qualify_practice_2.git
   local_clone: /home/itohdak/isucon/isucon12_qualify_practice_2
