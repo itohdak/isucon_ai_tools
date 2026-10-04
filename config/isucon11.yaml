@@ -1,0 +1,132 @@
+environment: isucon11-qualify
+app: isucondition (ISUCON11 qualifying round app)
+aws:
+  profile: isucon15.prep
+  region: ap-northeast-1
+  stack_name: isucon11-qualify (+ isucon11-qualify-pprotein for the 4th host)
+  template: isucon_cf_provisioning/isucon11_qualify/cf-template-isucon11-qualify.yaml
+  key_pair: isucon
+  ami: ami-0796be4f4814fc3d5 (matsuu/aws-isucon, isucon11-qualify-20220427213141)
+ssh:
+  user: isucon
+  private_key_path: /home/itohdak/.ssh/isucon.pem
+hosts:
+  # IMPORTANT: this is NOT 3 symmetric self-contained instances. A separate session
+  # (different from the one that created the CloudFormation stack) ran a full tuning
+  # arc (20 iterations, "it1".."it20") on the live servers directly and split roles:
+  s1:
+    name: isucon11-qualify-1
+    instance_id: i-0ab6f868c95d29f47
+    public_ip: 54.168.5.117
+    private_ip: 192.168.0.11
+    role: "main app host: nginx (public TLS entry, :443) + isucondition.go app (:3000).
+      Routes everything except POST /api/condition locally; POST /api/condition is
+      nginx-proxied to s3 (upstream app_s3, see sites-available/isucondition.conf).
+      MYSQL_HOST=192.168.0.12 (s2). Exposes /internal/latest for s3 to push newest
+      conditions into its in-memory cache. A redundant LOCAL mysqld still runs here
+      (idle, unused by the app) -- harmless but could be stopped to reclaim ~400MB."
+  s2:
+    name: isucon11-qualify-2
+    instance_id: i-066674531efe711ab
+    public_ip: 52.197.118.176
+    private_ip: 192.168.0.12
+    role: "dedicated MariaDB host (it9 split). nginx and isucondition.go are
+      deliberately stopped+disabled here -- DO NOT re-enable them (an earlier mistake
+      in this session re-enabled them, consuming ~1.5GB extra RAM and competing with
+      mysqld for CPU; reverted the same session). bind-address=0.0.0.0, tuned via
+      common/etc/mysql/mariadb.conf.d/70-tuning.cnf + s2/etc/mysql/mariadb.conf.d/80-db-host.cnf
+      (innodb_buffer_pool_size=2G, doublewrite off, autoinc_lock_mode=2, etc).
+      **Confirmed resource-bound**: mysqld pins 100% of one vCPU during a bench run
+      (load average ~4-5 on a 2 vCPU box) while s1/s3 still have idle headroom --
+      this is the current bottleneck, see Tuning Notes below."
+  s3:
+    name: isucon11-qualify-3
+    instance_id: i-080218726408e69c5
+    public_ip: 18.177.190.215
+    private_ip: 192.168.0.13
+    role: "secondary app host (it16 split): isucondition.go only handles
+      POST /api/condition (validated, buffered, bulk-inserted into s2 via writer.go's
+      4-worker/1000-row/50ms flush), then forwards the newest condition per ISU to
+      s1's /internal/latest. MYSQL_HOST=192.168.0.12 (s2). Local nginx and local
+      mysqld also still run here, both idle/unused (traffic reaches :3000 directly
+      from s1's nginx upstream, not through s3's own nginx) -- harmless, low-priority
+      cleanup candidate. Currently ~80% CPU idle during a bench run -- has spare
+      capacity other hosts could potentially offload onto."
+  s4:
+    name: isucon11-qualify-4-bench-pprotein
+    instance_id: i-02e2ee31c7c6739b3
+    public_ip: 13.159.142.24
+    private_ip: 192.168.0.100
+    role: "dedicated bench + pprotein + netdata-parent host (added via a separate
+      CloudFormation stack, isucon_cf_provisioning/common/cf-template-pprotein.yaml).
+      isucondition.go/nginx/mysql/jiaapi-mock are all stopped+disabled here (the AMI
+      ships them by default; jiaapi-mock in particular MUST stay disabled -- it binds
+      :5000, the same port bench's own embedded JIA mock needs)."
+services_per_app_host:
+  - isucondition.go.service (app; GOGC=400 set in the unit; pprof on :8888 via
+    github.com/kaz/pprotein/integration/standalone, added this session)
+  - nginx.service (s1 only in practice; TLS termination, ltsv access log)
+  - pprotein-agent.service (s1/s2/s3; exposes :19000/debug/log/{httplog,slowlog})
+benchmark:
+  binary: ~/bench/bench (on s4; must cd into ~/bench first, reads ./images relatively)
+  command: >-
+    cd ~/bench && ./bench -target 192.168.0.11:443 -tls
+    -all-addresses "192.168.0.11" -jia-service-url http://pprotein.maca.jp:5000
+    -exit-status
+  gotchas:
+    - "-all-addresses is required even for a single target (1-3 comma-separated app
+      private IPs) or main.go panics with 'invalid targetableAddresses'."
+    - "-jia-service-url's PORT is where bench binds its own embedded JIA mock on
+      the bench HOST itself (s4) -- the hostname only matters for the app's
+      server-side callback. jiaapi-mock.service must be disabled on s4 or bench
+      panics with 'bind: address already in use'."
+    - "pprotein.maca.jp is a private-only hostname (NXDOMAIN on public DNS),
+      resolved via a /etc/hosts entry (192.168.0.100 pprotein.maca.jp) added by
+      isucon_ansible's general role to every host. The app's postInitialize calls
+      http://pprotein.maca.jp:9000/api/group/collect asynchronously so pprotein's
+      60-90s collection window lines up with each bench run automatically."
+  baseline_2026-10-04: >-
+    After reverting an in-session mistake (see Incident below), two clean runs:
+    score 241533 (241568-35, pass) and 218912 (218962-50, pass) from s4 against s1.
+    Treat ~220-255k as the current baseline range (natural run-to-run variance);
+    this is already the output of the prior session's full it1-it20 tuning arc, not
+    an untuned baseline.
+monitoring:
+  - "nginx ltsv logging and MySQL slow query logging (long_query_time=0) are enabled
+    on every host that runs them."
+  - "**MariaDB-specific gotcha, durable**: the stock log_slow_filter on this AMI's
+    MariaDB 10.3 defaults to a non-empty list (admin,filesort,...,tmp_table_on_disk).
+    When non-empty, ONLY queries matching one of those categories are logged,
+    regardless of long_query_time -- long_query_time=0 alone does NOT log everything
+    like it would on plain MySQL. Fixed by adding `log_slow_filter = ''` to
+    common/etc/mysql/mariadb.conf.d/60-slowlog.cnf. If a slow log ever looks
+    suspiciously empty/sparse again on this environment, check this first."
+  - "pprof (:8888), pprotein (s4:9000), and the automatic /initialize collection
+    hook are all working and verified end-to-end as of this session."
+  - "slp chokes on this log once it accumulates /initialize's large bulk-dump
+    INSERT statements and binary icon data from a long-running slow log (seen: a
+    517MB log made slp fail with 'input does not match format', and a naive
+    block-filtering reload under Python risked OOM on s2's 3.6GB). Prefer
+    truncating the slow log right before/soon after each bench run rather than
+    letting it accumulate, and analyze soon after truncation."
+incident_2026-10-04: >-
+  A status check in this session found s2's nginx and isucondition.go services
+  "inactive (disabled)" and wrongly treated this as a problem, running
+  `systemctl enable --now` on both -- this undid the prior session's deliberate
+  DB-host-only split, adding ~1.5GB RAM pressure and app/nginx CPU competition on
+  the dedicated DB host. Caught because reverting the mistake was blocked by the
+  sandbox's "Modify Shared Resources" permission classifier, which was itself a
+  useful (if accidental) signal that another session had a live claim on this
+  resource. The user confirmed a separate session had been doing the real tuning
+  work (it1-it20, pushed to the shared git repo) and had just paused; asked this
+  session to take over from here. The mistake was reverted (nginx/isucondition.go
+  disabled again on s2) before any further benchmarking. Lesson: on a freshly
+  inherited or shared environment, verify *why* a service is in a given state
+  (check for a deliberate role split in git history/live config) before treating
+  an unexpected state as something to "fix".
+notes:
+  - "Git repo: git@github.com:itohdak/isucon11_qualify_practice_3.git (NOT empty --
+    contains the prior session's full it1-it20 tuning history). All of s1/s2/s3 are
+    on the same shared history now (synced in this session)."
+  - "Do not store database passwords or AWS secrets in this file (isucon/isucon
+    MySQL credentials here are the AMI's well-known defaults, not a secret)."
