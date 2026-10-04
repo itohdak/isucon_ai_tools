@@ -148,6 +148,25 @@ Performance decisions should cite evidence in this order:
 Do not optimize only by max latency.
 High-frequency medium-latency paths often matter more than a single slow request.
 
+## Branch And PR Workflow
+
+For a benchmark-backed change (anything beyond a tiny documentation-only edit), prefer a feature branch + pull request over committing and benchmarking directly on `main`. This is the default workflow going forward (user decision, 2026-10-04), replacing the older "commit directly to `main`, roll back if it goes wrong" habit; it applies to every project under this repo, not just the one that prompted it.
+
+1. Create a feature branch off `main` for the change. Scope one branch to one hypothesis/change so the eventual PR maps to a single, reviewable decision — not a long-lived branch accumulating unrelated changes.
+2. Commit the change on that branch, deploy that commit, and run the benchmark from it. This is the same "commit before benchmarking" rule from Evidence Rules above — the commit now lives on a branch instead of directly on `main`.
+3. If the result is unfavorable (regression, new errors, fails to confirm the hypothesis), do not open a PR. Record the rejected attempt in the relevant `reports/iterations/` report as usual, then either fix forward on the same branch or abandon/delete it.
+4. If the result is favorable, open a PR from the branch into `main` (e.g. `gh pr create`, falling back to the GitHub web UI or API if `gh` is not installed in the current environment) and merge it once reviewed.
+5. After merging, delete the feature branch unless there is a specific reason to keep it.
+
+**Write the PR title and description in Japanese by default** (user preference, 2026-10-04). This applies to PR titles/descriptions/comments specifically; code, code comments, and this file keep their existing (English) convention. At minimum, the PR description should include:
+
+- 変更内容: 何を・なぜ変更したか（Hypothesis / Evidence / Changeの要約）
+- bench結果: score、pass/fail、エラー種別と件数、実行日時、比較対象（直前のベースライン等）との差分
+- pprotein情報: ダッシュボードURL、収集状況（成功/失敗）、対象コミットハッシュ
+- 対応する `reports/iterations/<...>.md` へのリンクまたはパス（後から経緯を追えるようにするため）
+
+This does not replace the Recorder Agent's `reports/iterations/` reports — the PR description and the iteration report serve different audiences (PR: a human-reviewable, score-linked change record on GitHub, in Japanese; iteration report: the detailed evidence/agent trail, per this file's existing English convention) and both should be written for every benchmark-backed change.
+
 ## Resource And Split Policy
 
 **Hard rule, non-negotiable: never scale up an instance (change any host to a larger/more powerful instance type, or otherwise add CPU/memory/disk beyond what the contest provisioned).** ISUCON contest regulations prohibit this — it is disqualifying, not merely discouraged, and no evidence of a resource ceiling changes that. This applies regardless of how strong the resource evidence is or who asks — do not propose it, do not implement it even if asked, and flag it if anyone (including the user) suggests it, since it may be a momentary lapse rather than an informed exception. The only resource-scaling actions ever available are: (a) application/SQL-level optimization to use existing resources more efficiently, and (b) splitting roles (web/app/db) across the instances the contest already provisioned, unchanged in type/size — see below.
@@ -186,6 +205,7 @@ Every iteration report under `reports/iterations/` should include:
 - `Benchmark result`
 - `pprotein artifacts`
 - `Commit`
+- `PR` (link to the merged pull request, when the Branch And PR Workflow above was used; otherwise state that it was committed directly to `main` and why)
 - `Next candidate`
 
 Minimum `Agents used` format:
