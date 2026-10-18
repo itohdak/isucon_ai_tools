@@ -131,3 +131,20 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
   avg per-call latency measured so far at 1.7-2.6s) is a single heavy
   query rather than an N+1, so should show a clearer win independent of
   dataset size.
+
+## 2026-10-18 — Iteration 4: ownerGetChairs total_distance scope fix (clear win: ~2300 -> ~3121 mean)
+
+- `GET /api/owner/chairs`'s `total_distance` subquery ran its `LAG()`
+  window function over every `chair_locations` row in the whole system on
+  every call, filtering by `owner_id` only in the outer query. Pushed
+  `WHERE chair_id IN (SELECT id FROM chairs WHERE owner_id = ?)` into the
+  inner scan. Commit `b16ea49`, merged via PR #4. Verified identical
+  `total_distance` output vs. the original query on live data first.
+- Clear, unambiguous win (unlike iterations 2-3): alp avg for this route
+  dropped from 1.7-2.6s to **0.084s** (~20-30x); 3 bench runs scored 2986,
+  2891, 3485 (mean ~3121), clearly above every prior iteration's range
+  (1984-2879). Full detail:
+  `reports/iterations/iteration-isucon14-2-04-ownerchairs-distance.md`.
+- Next candidate: re-profile from this faster baseline — `/api/chair/notification`
+  (924.5s sum, 17055 calls) and `/api/app/notification` (777.1s sum, 7815
+  calls) are now the two largest total-time routes.
