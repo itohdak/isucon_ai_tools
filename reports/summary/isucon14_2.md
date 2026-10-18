@@ -87,3 +87,27 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
 - Next candidate: re-run Resource Monitor Agent to see whether app CPU is
   now the limiter; `getChairStats`/`appGetNearbyChairs` N+1 patterns
   flagged by App Understanding Agent as iteration 2 candidates.
+
+## 2026-10-18 — Iteration 2: getChairStats N+1 fix (inconclusive by score, retained)
+
+- Codex-direct analysis (no fresh sub-agent dispatch, reusing iteration 1's
+  findings to reduce load on the small app host): confirmed `getChairStats`
+  (called from the highest-total-time route, `GET /api/app/notification`)
+  ran 1+N queries per call. Replaced with a single JOIN+aggregation query,
+  commit `f68bb81`, merged via PR #2.
+- **Second resource incident**: `s1` went fully unresponsive again —
+  root cause this time identified: a 285MB unflushed mysql slow log
+  (`long_query_time=0`, 3 bench runs accumulated) parsed by multiple
+  concurrent `alp`/`slp`/`ls` commands on the 2 vCPU/3.7GB host with no
+  swap. User rebooted via AWS console a second time. Mitigated by adding a
+  persistent 2GB swapfile and switching to one-analysis-command-at-a-time
+  with log truncation between runs.
+- 3 runs before (mean ~2589) vs. 3 runs after (mean ~2472) — within this
+  environment's run-to-run noise band, no clear win or regression. Change
+  kept anyway: verified correctness-preserving by code read, and reduces
+  round-trips in a way expected to matter more at higher per-chair
+  completed-ride counts than this short bench window exercises.
+  Full detail: `reports/iterations/iteration-isucon14-2-02-chairstats-n1.md`.
+- Next candidates: `appGetNearbyChairs` N+1, `GET /api/owner/chairs`
+  window-function query (avg ~1.7-2.6s/call). Future iterations should run
+  3+ benchmarks per side and truncate logs between every run.
