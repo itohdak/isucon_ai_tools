@@ -162,3 +162,19 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
   inefficiencies are removed. Two runs logged the same pre-existing,
   unrelated `CODE=26` owner/chairs warning seen since the baseline.
   Full detail: `reports/iterations/iteration-isucon14-2-05-coupons-index.md`.
+
+## 2026-10-18 — Iteration 6: MySQL InterpolateParams (mean ~3353 -> ~3777)
+
+- With every obvious missing index/N+1 cleared, re-profiling showed the
+  two highest-volume routes already had low per-call latency (<0.12s avg)
+  but mysqld was still ahead of app CPU (~109% vs ~51% of 2 cores at
+  peak) — pointing at round-trip count. `main.go`'s MySQL DSN never set
+  `InterpolateParams` (defaults to false), so every parameterized query
+  was 3 round trips (prepare+execute+close) instead of 1. Enabled it,
+  commit `9ba3583`, merged via PR #6.
+- 3 runs: 4314, 4054, 2962 (mean ~3777); top two are the highest scores
+  recorded in this project so far. Full detail:
+  `reports/iterations/iteration-isucon14-2-06-interpolate-params.md`.
+- Next: recheck mysqld-vs-app CPU split; consider whether `s2` (still
+  idle) now has evidence for a DB split given throughput has roughly
+  quintupled since baseline (744 -> ~3777 mean).
