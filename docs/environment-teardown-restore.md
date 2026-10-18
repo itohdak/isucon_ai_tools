@@ -79,3 +79,117 @@ This records exactly how the `isucon14` AWS environment was torn down for cost s
 ## Cost Note
 
 Deleting the stack removes the 3 EC2 instances, their EBS volumes (all have `DeleteOnTermination: true`), the 3 Elastic IPs, and the VPC/networking resources — all stack-owned resources, so nothing should be left behind to keep incurring cost. Verify with `aws cloudformation describe-stacks --stack-name isucon14` returning "does not exist" and `aws ec2 describe-instances` showing no `isucon14`-tagged instances in a non-terminated state after deletion completes.
+
+## ISUCON14 Practice 2 Teardown (2026-10-18)
+
+This is the independent, from-scratch redo of ISUCON14 practice (see `AGENTS.md`'s
+"Current Environment Notes — ISUCON14 Practice 2" section and `reports/summary/isucon14_2.md`)
+torn down after completing the user-requested 10-iteration improvement loop. It is unrelated
+to the older `isucon14` environment documented earlier in this file — do not mix the two up;
+this entry does not reference or rely on that older teardown record.
+
+### State At Teardown
+
+- Full environment facts: `config/isucon14_2.yaml` — read that first, this is a summary.
+- Final result: baseline `pass=true score=744` (commit `9399531`) -> final mean `~8257`
+  (7651/8485/8635, commit merged via PR #10) — ~11.1x. Full iteration-by-iteration trail in
+  `reports/summary/isucon14_2.md`.
+- Topology at teardown: `s1` = app only (private `192.168.0.11`), `s2` = dedicated MySQL
+  (private `192.168.0.12`, split from `s1` in iteration 7), `s3` = bench + pprotein (private
+  `192.168.0.13`). Both `s1` and `s2` have a 2GB swapfile added mid-session (`/swapfile`,
+  persisted in `/etc/fstab`) after repeated SSH-unresponsive incidents — not tracked in git,
+  so a fresh restore from the CloudFormation template starts without it; re-add if heavy log
+  analysis on these 2 vCPU hosts is needed again (or better: avoid `alp`/`slp` on live hosts
+  entirely, per the lesson below).
+- Git repo: `git@github.com:itohdak/isucon14_practice_2.git`, `main` branch, tip `8c6ced7`
+  ("Merge pull request #10 ...") at teardown. Verified `s1`/`s2` had no uncommitted changes
+  (only expected AMI-default untracked files: `.x`, `.zshrc`, `go/`) and were checked out at
+  commits `c3f2333`/`565c248` respectively (each host's own last-deployed commit — both are
+  ancestors of `main`'s tip, no divergent local work). `s3` never had a git checkout (bench/
+  pprotein role only, no app config needed there).
+- CloudFormation stack `isucon14-practice-2` (region `ap-northeast-1`, profile
+  `isucon15.prep`), created from `isucon_cf_provisioning/isucon14/cf-template-isucon14.yaml`
+  (unchanged from the template already in this repo — no new template saved, since nothing
+  about the stack definition itself changed from the original).
+- `isucon_ansible`: `inventory/hosts`, `roles/pprotein/files/{alp.yaml,targets.json}`, and
+  `roles/repo/vars/main.yaml` all point at this environment (commit `d5c532f`) — will need
+  repointing (or restoring from an earlier commit) before this shared repo is next used for a
+  *different* project's ansible work.
+- **Lesson carried forward**: running `alp`/`slp` against a live, loaded 2 vCPU/3.7GB host's
+  full log file caused 4 separate total-unresponsiveness incidents this session (`s1` x2,
+  `s2` x2), each requiring a manual AWS-console reboot (`isucon15.prep` cannot
+  `ec2:RebootInstances`/`ec2:GetConsoleOutput`/CloudWatch itself). If this environment is
+  restored, prefer `SHOW VARIABLES`/`EXPLAIN`/targeted code reading over full-log analysis
+  tools while the host is under active benchmark load, and add swap immediately after
+  restore (see above).
+
+### Teardown Steps (What Was Actually Done)
+
+1. Confirmed `isucon14_practice_2`, `isucon_ansible`, and `isucon_ai_tools` had no
+   unpushed/uncommitted changes relevant to this project (one unrelated pre-existing
+   uncommitted diff in `isucon_ai_tools` docs, from before this session, was left untouched).
+2. Confirmed `s1`/`s2`/`s3` had no uncommitted host-side changes that would be lost.
+3. Deleted the stack:
+   ```bash
+   aws cloudformation delete-stack --profile isucon15.prep --region ap-northeast-1 --stack-name isucon14-practice-2
+   aws cloudformation wait stack-delete-complete --profile isucon15.prep --region ap-northeast-1 --stack-name isucon14-practice-2
+   ```
+
+### Restore Steps (Do This To Resume)
+
+1. **Recreate the stack** from the existing template:
+   ```bash
+   cd /home/itohdak/isucon/isucon_cf_provisioning
+   aws cloudformation create-stack \
+     --profile isucon15.prep --region ap-northeast-1 \
+     --stack-name isucon14-practice-2 \
+     --template-body file://isucon14/cf-template-isucon14.yaml \
+     --parameters ParameterKey=KeyPairName,ParameterValue=isucon ParameterKey=GitHubUsername,ParameterValue=itohdak
+   aws cloudformation wait stack-create-complete --profile isucon15.prep --region ap-northeast-1 --stack-name isucon14-practice-2
+   ```
+2. **Get the new public IPs** (private IPs are fixed at `.11`/`.12`/`.13`):
+   ```bash
+   aws cloudformation describe-stack-resources --profile isucon15.prep --region ap-northeast-1 --stack-name isucon14-practice-2 \
+     --query "StackResources[?ResourceType=='AWS::EC2::EIP'].[LogicalResourceId,PhysicalResourceId]" --output table
+   ```
+   Update `~/.ssh/config` (`s1`/`s2`/`s3`/`pprotein`/`bench`/`netdata*` `HostName` entries —
+   this operator machine has no `/etc/hosts` backing and no passwordless `sudo`, so these
+   aliases must point at IPs directly, not hostnames), `isucon_ansible/inventory/hosts`, and
+   `isucon14_practice_2/scripts/env.sh`.
+3. **Wait ~30-60s** after `CREATE_COMPLETE` for first-boot SSH key provisioning, then
+   **disable `unattended-upgrades`** on all 3 hosts before benchmarking (it otherwise burns
+   CPU for the first 30-60 min and produces misleadingly low scores):
+   ```bash
+   for h in s1 s2 s3; do ssh $h "sudo systemctl disable --now unattended-upgrades.service apt-daily.timer apt-daily-upgrade.timer"; done
+   ```
+4. **Add a 2GB swapfile on `s1` and `s2`** (not tracked in git — see the lesson above):
+   ```bash
+   for h in s1 s2; do ssh $h "sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile && echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab"; done
+   ```
+5. **Run the ansible roles** (after re-pointing `isucon_ansible/inventory/hosts` at the new
+   IPs, with `s3` in the `pprotein` group, `s1` in `webapp`, `s2` in `db`):
+   ```bash
+   cd /home/itohdak/isucon/isucon_ansible
+   ansible-playbook playbooks/deploy_general.yaml
+   ansible-playbook playbooks/deploy_pprotein.yaml
+   ```
+6. **Set up `s1`'s git checkout and SSH key access to GitHub** (isucon_id_rsa key + config +
+   gitconfig, per `docs/isucon-startup-checklist.md`'s "GitHub Push Access" section), then
+   `git clone`/`checkout main` to `/home/isucon` at `8c6ced7`. Repeat the SSH-key setup on
+   `s2` too (needed for its own git checkout, used only to deploy `s2/etc/mysql/...` and
+   `s2/services` via `common/deploy.sh`'s per-node override convention).
+7. **Set up MySQL on `s2`**: after `common/deploy.sh` copies `s2/etc/mysql/mysql.conf.d/mysqld.cnf`
+   (bind-address 0.0.0.0, 2G buffer pool, etc.) and restarts `mysql`, run
+   `sudo mysql -uroot < /home/isucon/webapp/sql/0-init.sql` once manually to create the
+   `isuride` database and the remote-capable `isucon@'%'` user (not part of the recurring
+   `/api/initialize` flow).
+8. **Deploy `s1`**: `cd /home/isucon/common && bash deploy.sh` (builds `isuride`+`payment_mock`,
+   stops/disables the now-redundant local mysql per `s1/disabled`, restarts
+   `nginx`/`isuride-go`/`isuride-matcher`/`isuride-payment_mock`).
+9. **Initialize and verify**:
+   ```bash
+   curl -sk --resolve xiv.isucon.net:443:<s1 public ip> -X POST https://xiv.isucon.net/api/initialize \
+     -H 'Content-Type: application/json' -d '{"payment_server":"http://<s3 private ip>:12345"}'
+   ```
+   Then run the benchmark from `s3` (see `isucon14_practice_2/scripts/bench.sh`) and confirm
+   `pass=true` with a score near the ~8257 mean recorded at teardown before resuming tuning.
