@@ -53,7 +53,7 @@ benchmark:
   notes:
     - "SNI/Host must be xiv.isucon.net (nginx vhost + cert /etc/nginx/tls/_.xiv.isucon.net.{crt,key}); --addr connects directly to s1's private IP, bypassing DNS."
     - "/api/initialize payload must set payment_server to the bench host's payment-url (http://192.168.0.13:12345) so the official bench-side payment mock scores rides correctly, not the AMI's local isuride-payment_mock.service (which is stopped on s2/s3 and only still enabled on s1 as a now-unused local convenience)."
-  baseline_score: "744, pass=true, commit 9399531, 2026-10-18 (iteration 0). Current: mean ~7365 (7517/7338/7239) at commit 1d482e9, iteration 7 -- see reports/summary/isucon14_2.md for the full trail."
+  baseline_score: "744, pass=true, commit 9399531, 2026-10-18 (iteration 0). Final (10-iteration loop complete): mean ~8257 (7651/8485/8635) at main after PR #10, iteration 10, 2026-10-18 -- ~11.1x baseline. See reports/summary/isucon14_2.md for the full trail."
 mysql:
   host: 192.168.0.12 (s2; split from s1 in iteration 7, 2026-10-18)
   port: 3306

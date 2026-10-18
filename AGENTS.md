@@ -395,14 +395,23 @@ Full environment facts: `config/isucon14_2.yaml`. Key points (see
   http://192.168.0.13:12345`. `payment_server` in `POST /api/initialize` must point at the
   same bench-host payment-url, not the AMI's local `isuride-payment_mock.service` (stopped and
   disabled on `s2`/`s3`; still enabled on `s1` but unused by the official benchmark scoring).
-- **Baseline (2026-10-18, commit `9399531`): `pass=true`, score=744.** See
-  `reports/iterations/iteration-isucon14-2-00-setup.md`. **Current (iteration 7, commit
-  `1d482e9`): mean ~7365** (7517/7338/7239) — ~9.9x baseline. Trail: missing indexes on
-  chairs/chair_locations/rides/ride_statuses (iter1, 744->~2589 mean), getChairStats and
-  appGetNearbyChairs N+1 fixes (iter2-3, inconclusive by score but correctness-preserving),
-  ownerGetChairs total_distance owner-scoping (iter4, ~2300->~3121 mean, clear win),
-  coupons.used_by index (iter5, ->~3353), MySQL DSN `InterpolateParams=true` (iter6,
-  ->~3777), MySQL split to s2 (iter7, ->~7365, ~2x). See `reports/summary/isucon14_2.md`.
+- **Baseline (2026-10-18, commit `9399531`): `pass=true`, score=744. Final (iteration 10,
+  commit merged via PR #10): mean ~8257** (7651/8485/8635) — ~11.1x baseline. This was the
+  full 10-iteration loop requested by the user on 2026-10-18; all 10 iterations merged via
+  PR (#1-#10). Trail: missing indexes on chairs/chair_locations/rides/ride_statuses (iter1,
+  744->~2589 mean), getChairStats and appGetNearbyChairs N+1 fixes (iter2-3, inconclusive by
+  score but correctness-preserving), ownerGetChairs total_distance owner-scoping (iter4,
+  ~2300->~3121 mean, clear win), coupons.used_by index (iter5, ->~3353), MySQL DSN
+  `InterpolateParams=true` (iter6, ->~3777), MySQL split to s2 (iter7, ->~7365, ~2x, the
+  single largest gain), MySQL server tuning on s2 (iter8, ->~7501), chairPostCoordinate
+  round-trip removal (iter9, ->~8118), appPostRides N+1 fix (iter10, ->~8257). See
+  `reports/summary/isucon14_2.md` for the full trail including operational incidents.
+  **4 host-hang incidents this session** (s1 x2 in iter1-2, s2 x2 in iter8), all caused by
+  running `alp`/`slp` log analysis on these 2 vCPU/3.7GB hosts while already under load —
+  each required a manual AWS-console reboot since the `isucon15.prep` IAM user cannot
+  reboot instances or read console output itself. Mitigated with a 2GB swapfile on both
+  hosts and, from iteration 8 onward, avoiding `alp`/`slp` entirely in favor of
+  `SHOW VARIABLES`/code reading/live-data spot-checks.
 - Operator-side automation lives in `isucon14_practice_2/scripts/` (`env.sh`, `run_cycle.sh`,
   `bench.sh`, `analyze.sh`) — same deploy→bench→analyze cycle pattern as the other active
   practice repos.

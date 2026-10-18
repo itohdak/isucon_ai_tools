@@ -235,3 +235,50 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
 - Score trail so far: baseline 744 -> iter1 ~2589 -> iter4 ~3121 ->
   iter5 ~3353 -> iter6 ~3777 -> iter7 ~7365 -> iter8 ~7501 -> iter9
   ~8118 (~11x baseline). One iteration remains in the requested 10.
+
+## 2026-10-18 — Iteration 10 (final): appPostRides N+1 fix (mean ~8118 -> ~8257)
+
+- Same N+1 shape as iteration 3's `appGetNearbyChairs` fix, found by
+  code reading: `appPostRides`'s "does this user already have an active
+  ride" check fetched all rides then ran one `getLatestRideStatus` query
+  per ride. Replaced with a single `ROW_NUMBER()`-based `COUNT(*)` query.
+  Verified identical output on live data (completed-only and
+  active-ride users) before deploying. Commit `c3f2333`, merged via
+  PR #10.
+- 3 runs: 7651, 8485, 8635 (mean ~8257) — 8635 is the highest single-run
+  score across all 10 iterations. Full detail:
+  `reports/iterations/iteration-isucon14-2-10-postrides-n1.md`.
+
+## Session summary (iterations 0-10, 2026-10-18)
+
+**Baseline 744 -> final mean ~8257, roughly 11.1x.** Full score trail:
+baseline 744 (iter0) -> ~2589 (iter1, missing indexes) -> ~2156-2472
+(iter2-3, N+1 fixes on getChairStats/appGetNearbyChairs, inconclusive by
+score but correctness-preserving) -> ~3121 (iter4, ownerGetChairs
+total_distance scoping, first clear win) -> ~3353 (iter5, coupons index)
+-> ~3777 (iter6, MySQL InterpolateParams) -> ~7365 (iter7, MySQL split to
+s2, ~2x, the single largest gain) -> ~7501 (iter8, MySQL server tuning)
+-> ~8118 (iter9, chairPostCoordinate round-trip removal) -> ~8257
+(iter10, appPostRides N+1 fix). All 10 iterations merged via PR into
+`main` (PRs #1-#10), each with its own `reports/iterations/` report.
+
+**Operational incidents (4 total, all resolved via manual AWS-console
+reboot by the user — the `isucon15.prep` IAM user cannot reboot
+instances or read console output/CloudWatch itself):** `s1` hung twice
+in iterations 1-2 (root cause: concurrent `alp`+`slp`+`ls` against an
+unflushed 285MB mysql slow log on a 2 vCPU/3.7GB host with no swap —
+mitigated by adding a 2GB swapfile and switching to one-command-at-a-time
+log analysis with truncation between runs); `s2` hung twice in iteration
+8 (same pattern, even on a size-capped 29MB log sample, after becoming
+the DB host in iteration 7) — from iteration 8 onward, `alp`/`slp` were
+avoided entirely in favor of `SHOW VARIABLES`/code reading/live-data
+spot-checks. Also found and fixed: `isuride-go`/`isuride-payment_mock`
+systemd units had `Requires=mysql.service`, which auto-restarted the
+disabled local MySQL on `s1` on every app restart after the iteration 7
+split (removed both lines). A `gh pr merge` auto-mode classifier block
+("Merge Without Review") was resolved by the user adding a
+`Bash(gh pr merge:*)` permission rule to `~/.claude/settings.json`.
+
+Final topology: `s1` = app only, `s2` = dedicated MySQL (evidence-based
+split, iteration 7), `s3` = bench + pprotein. See `config/isucon14_2.yaml`
+for current IPs/facts.
