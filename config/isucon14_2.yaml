@@ -1,0 +1,127 @@
+environment: isucon14-practice-2
+app: isuride (ISUCON14 ride-hailing matching app)
+aws:
+  profile: isucon15.prep
+  region: ap-northeast-1
+  stack_name: isucon14-practice-2
+ssh:
+  user: isucon
+  private_key_path: /home/itohdak/.ssh/isucon.pem
+hosts:
+  # Fresh environment built 2026-10-18 from isucon_cf_provisioning/isucon14/cf-template-isucon14.yaml.
+  # This is an independent redo of ISUCON14 practice, intentionally not continuing from any prior
+  # isucon14/isucon14_practice work (user instruction, 2026-10-18) -- do not cross-reference those
+  # repos/reports/configs when reasoning about this environment.
+  # Starting topology: s1 = app + db (default AMI single-host layout), s2 = spare (candidate for a
+  # future evidence-based DB split per AGENTS.md Resource And Split Policy), s3 = bench + pprotein.
+  # Private IPs fixed by the CF template (.11/.12/.13); public IPs below are current as of stack
+  # creation and will change on any stack recreation.
+  app:
+    name: isucon14-practice-2-s1
+    public_ip: 52.198.102.102
+    private_ip: 192.168.0.11
+    app_path: /home/isucon/webapp
+    role: app (isuride-go, isuride-matcher, isuride-payment_mock, nginx) + local MySQL (isuride DB)
+  spare:
+    name: isucon14-practice-2-s2
+    public_ip: 52.198.50.252
+    private_ip: 192.168.0.12
+    role: "idle (all isuride-*/nginx/mysql services stopped+disabled 2026-10-18). Netdata installed via the official kickstart installer (go.d.plugin) and pre-wired as a 'db'-group host for a future split; nothing runs here yet."
+  bench:
+    name: isucon14-practice-2-s3
+    public_ip: 3.115.132.76
+    private_ip: 192.168.0.13
+    bench_binary: /home/isucon/bench
+    role: "bench + pprotein + netdata parent. All isuride-*/nginx/mysql services stopped+disabled 2026-10-18 so bench's own built-in payment mock can use the default :12345 without a port clash."
+benchmark:
+  working_directory: /home/isucon
+  command:
+    - sudo
+    - -u
+    - isucon
+    - /home/isucon/bench
+    - run
+    - --target
+    - https://xiv.isucon.net
+    - --addr
+    - "192.168.0.11:443"
+    - --payment-bind-port
+    - "12345"
+    - --payment-url
+    - "http://192.168.0.13:12345"
+  target_url: https://xiv.isucon.net
+  notes:
+    - "SNI/Host must be xiv.isucon.net (nginx vhost + cert /etc/nginx/tls/_.xiv.isucon.net.{crt,key}); --addr connects directly to s1's private IP, bypassing DNS."
+    - "/api/initialize payload must set payment_server to the bench host's payment-url (http://192.168.0.13:12345) so the official bench-side payment mock scores rides correctly, not the AMI's local isuride-payment_mock.service (which is stopped on s2/s3 and only still enabled on s1 as a now-unused local convenience)."
+  baseline_score: "TBD -- not yet benchmarked as of 2026-10-18 environment setup. Record the first measured pass/fail + score here once available."
+mysql:
+  host: 127.0.0.1 (local on s1; no split yet)
+  port: 3306
+  database: isuride
+  access_method: "sudo mysql -uroot on s1 (unix_socket auth); app connects as isucon/isucon over TCP to 127.0.0.1"
+git:
+  remote_origin: git@github.com:itohdak/isucon14_practice_2.git
+  remote_status: "pushed (initial state on main, commit 9399531, 2026-10-18)"
+  app_repo_path: /home/isucon
+  app_source_path: /home/isucon/webapp
+  config_capture_path: /home/isucon/common
+  per_server_config_paths:
+    s1: /home/isucon/s1 (not yet created -- no overrides needed while s1 is the only active host)
+    s2: /home/isucon/s2
+    s3: /home/isucon/s3
+  initial_commit_message: "initial state: ISURIDE (isucon14) Go webapp + runtime config, isucon14-practice-2 env"
+  branch: main
+  iteration_policy:
+    - keep git status clean before each hypothesis
+    - feature branch + PR per AGENTS.md Branch And PR Workflow (not direct-to-main)
+    - commit only improved and valid changes
+    - restore or revert regressed changes
+  never_commit:
+    - raw secrets from /home/isucon/env.sh
+    - private keys (*.pem, *.key), TLS certs (*.crt)
+    - large generated logs, build caches
+logs:
+  observability_enabled: true
+  app_journal_units:
+    - isuride-go.service
+    - isuride-matcher.service
+    - isuride-payment_mock.service
+  nginx_access_log: /var/log/nginx/access.log
+  nginx_access_log_format: "LTSV with reqtime/apptime, configured from the start 2026-10-18 in common/etc/nginx/nginx.conf (log_format ltsv + access_log ... ltsv)."
+  mysql_error_log: /var/log/mysql/error.log
+  mysql_slow_log: /var/log/mysql/mysql-slow.log
+  mysql_slow_log_expected:
+    slow_query_log: true
+    long_query_time: 0.0
+  log_rotation: "common/deploy.sh truncates /var/log/nginx/access.log and /var/log/mysql/mysql-slow.log after every deploy."
+api_aggregation:
+  tool: alp or pprotein
+  matching_groups_file: isucon_ansible/roles/pprotein/files/alp.yaml
+  matching_groups:
+    - ^/api/initialize$
+    - ^/api/app/users$
+    - ^/api/app/payment-methods$
+    - ^/api/app/rides$
+    - ^/api/app/rides/estimated-fare$
+    - ^/api/app/rides/[^/]+/evaluation$
+    - ^/api/app/notification$
+    - ^/api/app/nearby-chairs$
+    - ^/api/owner/owners$
+    - ^/api/owner/sales$
+    - ^/api/owner/chairs$
+    - ^/api/chair/chairs$
+    - ^/api/chair/activity$
+    - ^/api/chair/coordinate$
+    - ^/api/chair/notification$
+    - ^/api/chair/rides/[^/]+/status$
+    - ^/api/internal/matching$
+pprotein:
+  dashboard_host: s3 (tunnel via `ssh pprotein`, see ~/.ssh/config)
+  collection_trigger: "POST /api/initialize calls collectPprotein() (added 2026-10-18 to webapp/go/main.go), best-effort GET to http://s3:9000/api/group/collect"
+  pprof_endpoint: "http://s1:8888/debug/pprof/ (go standalone.Integrate(\":8888\") added 2026-10-18)"
+  httplog_slowlog_agent_port: 19000 (pprotein-agent on s1)
+operator_scripts:
+  - isucon14_practice_2/scripts/env.sh (IPs, bench host)
+  - isucon14_practice_2/scripts/run_cycle.sh (deploy s1 -> bench from s3 -> analyze s1)
+  - isucon14_practice_2/scripts/bench.sh (runs on s3)
+  - isucon14_practice_2/scripts/analyze.sh (alp/slp, runs on s1)

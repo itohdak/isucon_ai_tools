@@ -360,6 +360,45 @@ Full environment facts: `config/isucon13.yaml`. Key points:
 - App repository on host: `/home/isucon`.
 - Shared GitHub repository: `git@github.com:itohdak/isucon14_practice.git`.
 
+## Current Environment Notes — ISUCON14 Practice 2 (ISURIDE) — ACTIVE PROJECT
+
+**This is the currently active project as of 2026-10-18.** It is an intentionally independent
+redo of ISUCON14 practice (user instruction, 2026-10-18): the `isucon14` / `isucon14_practice`
+local folders, `docs/isucon14-improvement-approach.md`, the pre-existing `reports/iterations/`
+files, `reports/summary/isucon14.md`, `docs/environment-teardown-restore.md`, and
+`config/isucon14.yaml` document a *separate, earlier* ISUCON14 practice run and must not be
+read or cross-referenced for this project — treat any hypothesis, score, or architecture
+decision found there as out of scope here, even if it would otherwise look reusable. Use
+`config/isucon14_2.yaml` and `reports/summary/isucon14_2.md` instead; do not confuse the two
+projects' route lists, scores, or commit history.
+
+Full environment facts: `config/isucon14_2.yaml`. Key points (see
+`reports/summary/isucon14_2.md` for the full chronological log):
+
+- Self-managed practice environment, CloudFormation stack `isucon14-practice-2`
+  (`isucon_cf_provisioning/isucon14/cf-template-isucon14.yaml`, profile `isucon15.prep`,
+  region `ap-northeast-1`). Private IPs fixed by the template (`.11`/`.12`/`.13`); public IPs
+  are reassigned on every stack recreation.
+- Topology (built 2026-10-18): `s1` = app + db (single host, the AMI's default layout — no
+  split executed yet; `s2` is the evidence-based-split candidate per the Resource And Split
+  Policy), `s2` = spare/idle, `s3` = bench + pprotein.
+- Shared GitHub repository: `git@github.com:itohdak/isucon14_practice_2.git`, branch `main`,
+  initial commit `9399531`. The operator's local SSH alias config (`~/.ssh/config`) has no
+  `/etc/hosts` backing on this machine (no passwordless sudo) — `s1`/`s2`/`s3` resolve for
+  `ssh` only, not for plain `curl`; use the public IP with `curl --resolve
+  xiv.isucon.net:443:<ip>` (sets Host + TLS SNI together) when hitting the app directly from
+  the operator machine.
+- Benchmark command (from `s3`): `sudo -u isucon /home/isucon/bench run --target
+  https://xiv.isucon.net --addr 192.168.0.11:443 --payment-bind-port 12345 --payment-url
+  http://192.168.0.13:12345`. `payment_server` in `POST /api/initialize` must point at the
+  same bench-host payment-url, not the AMI's local `isuride-payment_mock.service` (stopped and
+  disabled on `s2`/`s3`; still enabled on `s1` but unused by the official benchmark scoring).
+- **Baseline (2026-10-18, commit `9399531`): `pass=true`, score=744.** See
+  `reports/iterations/iteration-isucon14-2-00-setup.md`.
+- Operator-side automation lives in `isucon14_practice_2/scripts/` (`env.sh`, `run_cycle.sh`,
+  `bench.sh`, `analyze.sh`) — same deploy→bench→analyze cycle pattern as the other active
+  practice repos.
+
 ## Update Rule
 
 Update this file when:
