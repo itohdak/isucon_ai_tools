@@ -200,3 +200,24 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
   far. Full detail: `reports/iterations/iteration-isucon14-2-07-db-split.md`.
 - Topology now: s1=app only, s2=dedicated MySQL, s3=bench+pprotein.
   Next: re-check resource balance on both s1 and s2 post-split.
+
+## 2026-10-18 — Iteration 8: MySQL server tuning on s2 (mean ~7365 -> ~7501)
+
+- Post-split, mysqld alone saturates s2's 2 cores (~175%/200%) while s1
+  has ~50% idle. `SHOW VARIABLES` found `innodb_buffer_pool_size` still
+  at the 128M package default (s2 has 3.7G RAM and runs nothing else),
+  `innodb_flush_log_at_trx_commit=1`, `log_bin=ON` (MySQL 8.0 default)
+  with no replica. Set buffer pool to 2G, flush-at-commit to 2,
+  `innodb_flush_method=O_DIRECT`, `skip-log-bin`. Commit `565c248`,
+  merged via PR #8.
+- **Second resource incident**: `slp` on s2's slow log (even a 29MB
+  capped sample) hung the host twice more, needing two more manual
+  reboots — 4 total hang incidents this session (s1 x2, s2 x2). This
+  iteration's evidence came from `SHOW VARIABLES` only, no fresh
+  slow-log profiling.
+- 3 runs: 7552, 7023, 7929 (mean ~7501) — modest, consistent further gain.
+  Full detail: `reports/iterations/iteration-isucon14-2-08-mysql-tuning.md`.
+- Next: avoid `alp`/`slp` full-log analysis on these 2 vCPU hosts going
+  forward (repeated hangs); `internalGetMatching`'s `ORDER BY RAND()` is
+  a candidate but changing its selection semantics needs human approval
+  per AGENTS.md.
