@@ -59,3 +59,31 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
 - Next: run the AGENTS.md Default Improvement Loop (Profiler/Resource
   Monitor/App Understanding/SQL agents in parallel) starting from this
   baseline, per the user's 2026-10-18 request for 10 iterations.
+
+## 2026-10-18 — Iteration 1: missing indexes (744 -> 3296, +343%)
+
+- Dispatched Profiler/Resource Monitor/App Understanding/SQL Agents in
+  parallel. First three converged strongly: `chairs`/`chair_locations`/
+  `rides`/`ride_statuses` had zero indexes beyond PK, mysqld was CPU-bound
+  (90-168% of 2 cores) during a bench run while the app itself was only
+  7-23%. Added `UNIQUE(access_token)`/`INDEX(owner_id)` on `chairs`,
+  `INDEX(chair_id, created_at)` on `chair_locations`,
+  `INDEX(chair_id, updated_at)`/`INDEX(user_id)` on `rides`,
+  `INDEX(ride_id, created_at)` on `ride_statuses`. No app code changed.
+- **Incident**: `s1` went fully unresponsive (SSH + HTTPS) for ~10-15 min
+  mid-iteration, very likely caused by the SQL Agent's background work
+  (never returned a report after ~40 min). The `isucon15.prep` IAM user
+  cannot reboot/stop instances or read CloudWatch/console output, so
+  recovery required the user to reboot the instance manually from the AWS
+  console. All systemd services came back automatically (enabled); no data
+  or git history was lost. Added a Bash permission rule (`Bash(gh pr
+  merge:*)` in `~/.claude/settings.json`, user request) after `gh pr merge`
+  was blocked by the auto-mode classifier's "Merge Without Review" check,
+  so subsequent iterations' PRs can be merged directly.
+- Result: `pass=true`, score 744 -> **3296** (+343%), and the one baseline
+  benchmark error (type 26 x1) disappeared entirely. PR #1 merged
+  (https://github.com/itohdak/isucon14_practice_2/pull/1), branch deleted.
+  Full detail: `reports/iterations/iteration-isucon14-2-01-missing-indexes.md`.
+- Next candidate: re-run Resource Monitor Agent to see whether app CPU is
+  now the limiter; `getChairStats`/`appGetNearbyChairs` N+1 patterns
+  flagged by App Understanding Agent as iteration 2 candidates.
