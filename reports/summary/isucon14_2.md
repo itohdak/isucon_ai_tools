@@ -148,3 +148,17 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
 - Next candidate: re-profile from this faster baseline — `/api/chair/notification`
   (924.5s sum, 17055 calls) and `/api/app/notification` (777.1s sum, 7815
   calls) are now the two largest total-time routes.
+
+## 2026-10-18 — Iteration 5: coupons.used_by index (mean ~3121 -> ~3353)
+
+- Systematic grep of every `WHERE col =` in the Go handlers against the
+  schema found one remaining gap: `coupons.used_by` (used by
+  `calculateDiscountedFare`, called from the highest-volume
+  `appGetNotification` route) had no index at all beyond
+  `PRIMARY KEY(user_id, code)`. Added `INDEX(used_by)`, commit `b35b67e`,
+  merged via PR #5.
+- 3 runs: 3329, 3238, 3493 (mean ~3353), all `pass=true`. Narrower spread
+  than iteration 4 (3238-3493 vs 2891-3485) — variance shrinking as more
+  inefficiencies are removed. Two runs logged the same pre-existing,
+  unrelated `CODE=26` owner/chairs warning seen since the baseline.
+  Full detail: `reports/iterations/iteration-isucon14-2-05-coupons-index.md`.
