@@ -111,3 +111,23 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
 - Next candidates: `appGetNearbyChairs` N+1, `GET /api/owner/chairs`
   window-function query (avg ~1.7-2.6s/call). Future iterations should run
   3+ benchmarks per side and truncate logs between every run.
+
+## 2026-10-18 — Iteration 3: appGetNearbyChairs double N+1 fix
+
+- Replaced the per-chair, per-ride double N+1 in `appGetNearbyChairs`
+  (busy-chair check + location lookup) with two window-function queries
+  total. Commit `981164e`, merged via PR #3. Verified the new query's
+  latest-status derivation against the old per-ride query on live data
+  before deploying.
+- 3 runs: 2087, 2310, 2071 (mean ~2156) — within the same noise band seen
+  since iteration 1 (1984-3296) on this small (~24 active chairs) dataset;
+  no clear score win, no regression. One run logged `CODE=26 x2`
+  (owner/chairs total_distance lag), confirmed pre-existing and unrelated
+  (same warning type seen once in the very first baseline run).
+  Full detail: `reports/iterations/iteration-isucon14-2-03-nearbychairs-n1.md`.
+- Observation: 3 iterations of N+1/index fixes on this small-dataset bench
+  haven't moved the score much beyond its noise band. Next candidate
+  (`GET /api/owner/chairs`'s window-function `total_distance` query, worst
+  avg per-call latency measured so far at 1.7-2.6s) is a single heavy
+  query rather than an N+1, so should show a clearer win independent of
+  dataset size.
