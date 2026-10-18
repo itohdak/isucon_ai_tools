@@ -379,9 +379,11 @@ Full environment facts: `config/isucon14_2.yaml`. Key points (see
   (`isucon_cf_provisioning/isucon14/cf-template-isucon14.yaml`, profile `isucon15.prep`,
   region `ap-northeast-1`). Private IPs fixed by the template (`.11`/`.12`/`.13`); public IPs
   are reassigned on every stack recreation.
-- Topology (built 2026-10-18): `s1` = app + db (single host, the AMI's default layout — no
-  split executed yet; `s2` is the evidence-based-split candidate per the Resource And Split
-  Policy), `s2` = spare/idle, `s3` = bench + pprotein.
+- Topology: `s1` = app only, `s2` = dedicated MySQL (split 2026-10-18, iteration 7, evidence-based
+  per the Resource And Split Policy — mysqld was ~113% of 2 cores vs. app ~48% even after
+  exhausting SQL/index fixes), `s3` = bench + pprotein. `isuride-go`/`isuride-payment_mock` no
+  longer have `Requires=mysql.service` (that caused s1's disabled local mysql to auto-restart
+  on every app restart — fixed in the same iteration).
 - Shared GitHub repository: `git@github.com:itohdak/isucon14_practice_2.git`, branch `main`,
   initial commit `9399531`. The operator's local SSH alias config (`~/.ssh/config`) has no
   `/etc/hosts` backing on this machine (no passwordless sudo) — `s1`/`s2`/`s3` resolve for
@@ -394,7 +396,13 @@ Full environment facts: `config/isucon14_2.yaml`. Key points (see
   same bench-host payment-url, not the AMI's local `isuride-payment_mock.service` (stopped and
   disabled on `s2`/`s3`; still enabled on `s1` but unused by the official benchmark scoring).
 - **Baseline (2026-10-18, commit `9399531`): `pass=true`, score=744.** See
-  `reports/iterations/iteration-isucon14-2-00-setup.md`.
+  `reports/iterations/iteration-isucon14-2-00-setup.md`. **Current (iteration 7, commit
+  `1d482e9`): mean ~7365** (7517/7338/7239) — ~9.9x baseline. Trail: missing indexes on
+  chairs/chair_locations/rides/ride_statuses (iter1, 744->~2589 mean), getChairStats and
+  appGetNearbyChairs N+1 fixes (iter2-3, inconclusive by score but correctness-preserving),
+  ownerGetChairs total_distance owner-scoping (iter4, ~2300->~3121 mean, clear win),
+  coupons.used_by index (iter5, ->~3353), MySQL DSN `InterpolateParams=true` (iter6,
+  ->~3777), MySQL split to s2 (iter7, ->~7365, ~2x). See `reports/summary/isucon14_2.md`.
 - Operator-side automation lives in `isucon14_practice_2/scripts/` (`env.sh`, `run_cycle.sh`,
   `bench.sh`, `analyze.sh`) — same deploy→bench→analyze cycle pattern as the other active
   practice repos.

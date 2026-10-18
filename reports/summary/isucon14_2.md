@@ -178,3 +178,25 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
 - Next: recheck mysqld-vs-app CPU split; consider whether `s2` (still
   idle) now has evidence for a DB split given throughput has roughly
   quintupled since baseline (744 -> ~3777 mean).
+
+## 2026-10-18 — Iteration 7: MySQL split to s2 (evidence-based; mean ~3777 -> ~7365, ~2x)
+
+- netdata still showed `s1` CPU-bound (system ~95-99% busy, mysqld ~113%
+  of 2 cores vs. app ~48%) even after iterations 1-6 exhausted SQL/index
+  fixes — meeting AGENTS.md's Resource And Split Policy threshold.
+  Split MySQL to `s2` (idle since setup, same `c5.large` type — not a
+  scale-up): `bind-address=0.0.0.0` on s2, `ISUCON_DB_HOST` repointed,
+  `s2/services=mysql`, `s1/disabled=mysql`. Commits `344f204`+`c013a46`,
+  merged as `1d482e9` via PR #7.
+- **Gotcha found and fixed**: `isuride-go.service`/`isuride-payment_mock.service`
+  both had `Requires=mysql.service`, which auto-started the disabled local
+  mysql on `s1` every time `isuride-go` restarted (systemd `Requires=`
+  ignores enabled/disabled state). Removed both lines from both units.
+- No data migration needed (`/api/initialize` always rebuilds schema+seed
+  data fresh against `ISUCON_DB_HOST`); ran `0-init.sql` once manually on
+  `s2` to create the DB + remote `isucon@'%'` user first.
+- 3 runs: 7517, 7338, 7239 (mean ~7365) — roughly double iteration 6's
+  mean (~3777), the largest and most consistent single-iteration gain so
+  far. Full detail: `reports/iterations/iteration-isucon14-2-07-db-split.md`.
+- Topology now: s1=app only, s2=dedicated MySQL, s3=bench+pprotein.
+  Next: re-check resource balance on both s1 and s2 post-split.

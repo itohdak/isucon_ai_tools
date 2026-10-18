@@ -21,12 +21,12 @@ hosts:
     public_ip: 52.198.102.102
     private_ip: 192.168.0.11
     app_path: /home/isucon/webapp
-    role: app (isuride-go, isuride-matcher, isuride-payment_mock, nginx) + local MySQL (isuride DB)
-  spare:
+    role: "app only (isuride-go, isuride-matcher, isuride-payment_mock, nginx). Local mysql stopped+disabled (split to s2, iteration 7, 2026-10-18); isuride-go/isuride-payment_mock units no longer have Requires=mysql.service (that was auto-restarting the disabled local mysql on every app restart)."
+  db:
     name: isucon14-practice-2-s2
     public_ip: 52.198.50.252
     private_ip: 192.168.0.12
-    role: "idle (all isuride-*/nginx/mysql services stopped+disabled 2026-10-18). Netdata installed via the official kickstart installer (go.d.plugin) and pre-wired as a 'db'-group host for a future split; nothing runs here yet."
+    role: "dedicated MySQL host (split from s1, iteration 7, 2026-10-18 -- evidence: mysqld ~113% of 2 cores vs app ~48% even after exhausting SQL/index fixes). bind-address/mysqlx-bind-address = 0.0.0.0 (restricted to 192.168.0.0/24 by the existing security group, no SG change needed). isucon@'%' remote user created via webapp/sql/0-init.sql (run manually once, not part of the recurring /api/initialize flow)."
   bench:
     name: isucon14-practice-2-s3
     public_ip: 3.115.132.76
@@ -53,12 +53,12 @@ benchmark:
   notes:
     - "SNI/Host must be xiv.isucon.net (nginx vhost + cert /etc/nginx/tls/_.xiv.isucon.net.{crt,key}); --addr connects directly to s1's private IP, bypassing DNS."
     - "/api/initialize payload must set payment_server to the bench host's payment-url (http://192.168.0.13:12345) so the official bench-side payment mock scores rides correctly, not the AMI's local isuride-payment_mock.service (which is stopped on s2/s3 and only still enabled on s1 as a now-unused local convenience)."
-  baseline_score: "TBD -- not yet benchmarked as of 2026-10-18 environment setup. Record the first measured pass/fail + score here once available."
+  baseline_score: "744, pass=true, commit 9399531, 2026-10-18 (iteration 0). Current: mean ~7365 (7517/7338/7239) at commit 1d482e9, iteration 7 -- see reports/summary/isucon14_2.md for the full trail."
 mysql:
-  host: 127.0.0.1 (local on s1; no split yet)
+  host: 192.168.0.12 (s2; split from s1 in iteration 7, 2026-10-18)
   port: 3306
   database: isuride
-  access_method: "sudo mysql -uroot on s1 (unix_socket auth); app connects as isucon/isucon over TCP to 127.0.0.1"
+  access_method: "sudo mysql -uroot on s2 (unix_socket auth, for schema/admin work); app connects as isucon/isucon over TCP to 192.168.0.12. From s1, plain `mysql -h 192.168.0.12 -uisucon -pisucon` also works (remote user)."
 git:
   remote_origin: git@github.com:itohdak/isucon14_practice_2.git
   remote_status: "pushed (initial state on main, commit 9399531, 2026-10-18)"
