@@ -221,3 +221,17 @@ future iterations here. Full environment facts: `config/isucon14_2.yaml`.
   forward (repeated hangs); `internalGetMatching`'s `ORDER BY RAND()` is
   a candidate but changing its selection semantics needs human approval
   per AGENTS.md.
+
+## 2026-10-18 — Iteration 9: chairPostCoordinate round-trip removal (mean ~7501 -> ~8118)
+
+- Code read of `chairPostCoordinate` (one of the highest-volume routes)
+  found an INSERT into `chair_locations` immediately followed by a
+  by-PK SELECT of the same row, solely to read back `CreatedAt` for the
+  response. Generated the timestamp in Go (`time.Now()`), inserted it
+  explicitly, dropped the SELECT. Commit `e654b14`, merged via PR #9.
+- 3 runs: 8233, 8107, 8015 (mean ~8118) — highest scores in this project
+  so far, tight spread. Full detail:
+  `reports/iterations/iteration-isucon14-2-09-coordinate-noselect.md`.
+- Score trail so far: baseline 744 -> iter1 ~2589 -> iter4 ~3121 ->
+  iter5 ~3353 -> iter6 ~3777 -> iter7 ~7365 -> iter8 ~7501 -> iter9
+  ~8118 (~11x baseline). One iteration remains in the requested 10.
